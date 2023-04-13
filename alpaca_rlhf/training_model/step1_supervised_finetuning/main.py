@@ -62,6 +62,7 @@ def parse_args():
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
         required=True,
+        default='openai-gpt'
     )
     parser.add_argument(
         "--per_device_train_batch_size",
@@ -316,6 +317,7 @@ def main():
         if args.global_rank == 0:
             save_hf_format(model, tokenizer, args)
 
+        # Optimizer state sharding (ZeRO) https://zhuanlan.zhihu.com/p/394064174
         if args.zero_stage == 3:
             # For zero stage 3, each gpu only has a part of the model, so we need a special save function
             save_zero_three_model(model,

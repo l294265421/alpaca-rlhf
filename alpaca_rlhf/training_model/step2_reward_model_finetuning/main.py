@@ -58,6 +58,7 @@ def parse_args():
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
         required=True,
+        default='openai-gpt'
     )
     parser.add_argument(
         "--num_padding_at_beginning",
@@ -231,6 +232,7 @@ def main():
                                   collate_fn=data_collator,
                                   sampler=train_sampler,
                                   batch_size=args.per_device_train_batch_size)
+    # todo why?
     eval_sampler = SequentialSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset,
                                  collate_fn=data_collator,
