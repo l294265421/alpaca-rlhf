@@ -1,6 +1,13 @@
 # alpaca-rlhf
 Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The base model is from [my-alpaca](https://github.com/l294265421/my-alpaca) and [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca), which train LLaMA with the original alpaca dataset and a multi-turn dialogue dataset respectively.
 
+## Stey by Step
+### Prepare Data
+
+### Training Reward Model
+
+### Finetuning Language Model
+
 ## References
 
 ### Sources
