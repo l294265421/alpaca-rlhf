@@ -61,8 +61,9 @@ def parse_args():
         type=str,
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
-        required=True,
-        default='openai-gpt'
+        required=False,
+        default='decapoda-research/llama-7b-hf',
+        # default='openai-gpt'
     )
     parser.add_argument(
         "--per_device_train_batch_size",
