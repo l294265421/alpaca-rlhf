@@ -21,6 +21,8 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 - [HH-RLHF](https://huggingface.co/datasets/Anthropic/hh-rlhf)
   - [hh-rlhf](https://github.com/anthropics/hh-rlhf)
     - Training a Helpful and Harmless Assistant with Reinforcement Learning from Human Feedback [[paper](https://arxiv.org/abs/2204.05862)]
+    - [Dahoas/static-hh](https://huggingface.co/datasets/Dahoas/static-hh)
+    - [Dahoas/rm-static](https://huggingface.co/datasets/Dahoas/rm-static)
 
 ### Repositories
 - [my-alpaca](https://github.com/l294265421/my-alpaca)

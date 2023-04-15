@@ -31,6 +31,8 @@ from alpaca_rlhf.training_model.utils.ds_utils import get_train_ds_config
 from alpaca_rlhf.training_model.utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters
 from alpaca_rlhf.training_model.utils.model.model_utils import create_hf_model
 
+os.environ["PATH"] = os.environ["PATH"] + ":/root/miniconda3/bin/"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -38,7 +40,7 @@ def parse_args():
         "Finetune a transformers model on a causal language modeling task")
     parser.add_argument('--data_path',
                         nargs='*',
-                        default=['Dahoas/rm-static'],
+                        default=['Dahoas/rm-static'],  # https://huggingface.co/datasets/Dahoas/rm-static
                         help='Path to the training dataset. Accepted format:'
                         '1) a single data path, 2) multiple datasets in the'
                         'form: dataset1-path dataset2-path ...')
@@ -52,7 +54,8 @@ def parse_args():
     parser.add_argument(
         '--data_output_path',
         type=str,
-        default='/tmp/data_files/',
+        # default='/tmp/data_files/',
+        default='/root/autodl-tmp/',
         help=
         'Where to store the data-related files such as shuffle index. This needs to be on a local storage of a node (not on a shared storage)'
     )
@@ -200,6 +203,8 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
                                               fast_tokenizer=True)
+    if not tokenizer.eos_token:
+        tokenizer.eos_token = '[PAD]'
     tokenizer.pad_token = tokenizer.eos_token
 
     model = create_hf_model(AutoModelForCausalLM, args.model_name_or_path,
@@ -299,7 +304,8 @@ def main():
         model.train()
         for step, batch in enumerate(train_dataloader):
             batch = to_device(batch, device)
-            outputs = model(**batch, use_cache=False)
+            # outputs = model(**batch, use_cache=False)
+            outputs = model(**batch)
             loss = outputs.loss
             model.backward(loss)
             model.step()
