@@ -62,8 +62,8 @@ def parse_args():
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
         required=False,
-        default='decapoda-research/llama-7b-hf',
-        # default='openai-gpt'
+        # default='decapoda-research/llama-7b-hf',
+        default='openai-gpt'
     )
     parser.add_argument(
         "--per_device_train_batch_size",
@@ -178,17 +178,18 @@ def main():
         device = torch.device("cuda", args.local_rank)
         # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
         # torch.distributed.init_process_group(backend='nccl')
+
         deepspeed.init_distributed()
 
     args.global_rank = torch.distributed.get_rank()
+    world_size = torch.distributed.get_world_size()
 
     ds_config = get_train_ds_config(offload=args.offload,
                                     stage=args.zero_stage)
     ds_config[
         'train_micro_batch_size_per_gpu'] = args.per_device_train_batch_size
     ds_config[
-        'train_batch_size'] = args.per_device_train_batch_size * torch.distributed.get_world_size(
-        ) * args.gradient_accumulation_steps
+        'train_batch_size'] = args.per_device_train_batch_size * world_size * args.gradient_accumulation_steps
 
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
