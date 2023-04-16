@@ -29,6 +29,8 @@ from alpaca_rlhf.training_model.utils.utils import print_rank_0, to_device, save
 from alpaca_rlhf.training_model.utils.ds_utils import get_train_ds_config
 from alpaca_rlhf.training_model.utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters
 
+os.environ["PATH"] = os.environ["PATH"] + ":/root/miniconda3/bin/"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -50,14 +52,16 @@ def parse_args():
     parser.add_argument(
         '--data_output_path',
         type=str,
-        default='/tmp/data_files/',
+        # default='/tmp/data_files/',
+        default='/root/autodl-tmp/',
         help='Where to store the data-related files such as shuffle index.')
     parser.add_argument(
         "--model_name_or_path",
         type=str,
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
-        required=True,
+        required=False,
+        # default='decapoda-research/llama-7b-hf',
         default='openai-gpt'
     )
     parser.add_argument(
@@ -202,6 +206,8 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
                                               fast_tokenizer=True)
+    if not tokenizer.eos_token:
+        tokenizer.eos_token = '[PAD]'
     tokenizer.pad_token = tokenizer.eos_token
 
     rm_model = create_critic_model(args.model_name_or_path, tokenizer,
@@ -314,7 +320,8 @@ def main():
         mean_loss = 0
         for step, batch in enumerate(train_dataloader):
             batch = to_device(batch, device)
-            outputs = rm_model(**batch, use_cache=False)
+            # outputs = rm_model(**batch, use_cache=False)
+            outputs = rm_model(**batch)
             loss = outputs["loss"]
             rm_model.backward(loss)
             rm_model.step()

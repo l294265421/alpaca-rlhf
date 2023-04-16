@@ -44,13 +44,20 @@ class RewardModel(nn.Module):
                 use_cache=False):
         loss = None
 
+        # transformer_outputs = self.rwtranrsformer(
+        #     input_ids,
+        #     past_key_values=past_key_values,
+        #     attention_mask=attention_mask,
+        #     head_mask=head_mask,
+        #     inputs_embeds=inputs_embeds,
+        #     use_cache=use_cache
+        #     )
         transformer_outputs = self.rwtranrsformer(
             input_ids,
-            past_key_values=past_key_values,
             attention_mask=attention_mask,
             head_mask=head_mask,
-            inputs_embeds=inputs_embeds,
-            use_cache=use_cache)
+            inputs_embeds=inputs_embeds
+        )
 
         hidden_states = transformer_outputs[0]
         rewards = self.v_head(hidden_states).squeeze(-1)

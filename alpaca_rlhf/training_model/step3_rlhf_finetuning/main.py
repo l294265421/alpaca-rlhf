@@ -65,7 +65,8 @@ def parse_args():
     parser.add_argument(
         '--data_output_path',
         type=str,
-        default='/tmp/data_files',
+        # default='/tmp/data_files',
+        default='/root/autodl-tmp/',
         help=
         'Where to store the data-related files such as shuffle index. This needs to be on a local storage of a node (not on a shared storage)'
     )
@@ -100,7 +101,7 @@ def parse_args():
     parser.add_argument(
         "--num_padding_at_beginning",
         type=int,
-        default=1,
+        default=0,
         help=
         "OPT model has a fixed number (1) of padding tokens at the beginning of the input. We did not see this in other models but keep it as an option for now."
     )
