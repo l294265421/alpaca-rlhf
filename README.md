@@ -2,7 +2,7 @@
 Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The base model is from [my-alpaca](https://github.com/l294265421/my-alpaca) and [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca), which train LLaMA with the original alpaca dataset and a multi-turn dialogue dataset respectively.
 
 ## Stey by Step
-### Debug Using PyCharm
+### Remote Debug Using PyCharm
 - [Bootstrap Script](alpaca_rlhf/training_model/my_deepspeed.py)
   - single gpu args
     - step1: --num_gpus 1 /tmp/pycharm_project_227/alpaca_rlhf/training_model/step1_supervised_finetuning/main.py --gradient_accumulation_steps 2 --lora_dim 128 --zero_stage 0 --deepspeed --output_dir /root/autodl-tmp/actor
