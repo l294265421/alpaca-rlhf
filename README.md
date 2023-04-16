@@ -23,6 +23,14 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
     - Training a Helpful and Harmless Assistant with Reinforcement Learning from Human Feedback [[paper](https://arxiv.org/abs/2204.05862)]
     - [Dahoas/static-hh](https://huggingface.co/datasets/Dahoas/static-hh)
     - [Dahoas/rm-static](https://huggingface.co/datasets/Dahoas/rm-static)
+- GPT-4-LLM
+  - [GitHub](https://github.com/Instruction-Tuning-with-GPT-4/GPT-4-LLM)
+  - [Paper](https://arxiv.org/pdf/2304.03277.pdf)
+  - [Site](https://instruction-tuning-with-gpt-4.github.io/)
+- Open-Assistant
+  - [Site](https://open-assistant.io/zh)
+  - [GitHub](https://github.com/LAION-AI/Open-Assistant)
+  - [Paper](./papers/2023-OpenAssistant%20Conversations%20-%20Democratizing%20Large%20Language%20Model%20Alignment.pdf)
 
 ### Repositories
 - [my-alpaca](https://github.com/l294265421/my-alpaca)
