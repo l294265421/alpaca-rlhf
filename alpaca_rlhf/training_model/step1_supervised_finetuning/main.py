@@ -31,8 +31,6 @@ from alpaca_rlhf.training_model.utils.ds_utils import get_train_ds_config
 from alpaca_rlhf.training_model.utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters
 from alpaca_rlhf.training_model.utils.model.model_utils import create_hf_model
 
-os.environ["PATH"] = os.environ["PATH"] + ":/root/miniconda3/bin/"
-
 
 def parse_args():
     parser = argparse.ArgumentParser(
