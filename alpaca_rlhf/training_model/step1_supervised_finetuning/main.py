@@ -19,6 +19,7 @@ from transformers import (
     default_data_collator,
     get_scheduler,
 )
+from transformers import LlamaForCausalLM, LlamaTokenizer
 
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
@@ -201,7 +202,8 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
                                               fast_tokenizer=True)
-    if not tokenizer.eos_token:
+    # tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path)
+    if tokenizer.eos_token is None:
         tokenizer.eos_token = '[PAD]'
     tokenizer.pad_token = tokenizer.eos_token
 

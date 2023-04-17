@@ -204,7 +204,7 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
                                               fast_tokenizer=True)
-    if not tokenizer.eos_token:
+    if tokenizer.eos_token is None:
         tokenizer.eos_token = '[PAD]'
     tokenizer.pad_token = tokenizer.eos_token
 

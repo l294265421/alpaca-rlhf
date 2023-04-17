@@ -131,11 +131,12 @@ class RewardModel(nn.Module):
 
         transformer_outputs = self.rwtranrsformer(
             input_ids,
-            past_key_values=past_key_values,
+            # past_key_values=past_key_values,
             attention_mask=attention_mask,
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
-            use_cache=use_cache)
+            # use_cache=use_cache
+        )
         hidden_states = transformer_outputs[0]
         values = self.v_head(hidden_states).squeeze(-1)
         if return_value_only:
