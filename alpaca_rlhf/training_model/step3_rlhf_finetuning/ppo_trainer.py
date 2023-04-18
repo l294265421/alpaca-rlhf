@@ -135,8 +135,8 @@ class DeepSpeedPPOTrainer():
         reward_clip = torch.clamp(reward_score, -self.clip_reward_value,
                                   self.clip_reward_value)
         batch_size = log_probs.shape[0]
-        # for j in range(batch_size):
-        #     rewards[j, start:ends[j]][-1] += reward_clip[j]
+        for j in range(batch_size):
+            rewards[j, start:ends[j]][-1] += reward_clip[j]
 
         return rewards
 
@@ -176,7 +176,8 @@ class DeepSpeedPPOTrainer():
         self.actor_model.step()
         value = self.critic_model.forward_value(**batch,
                                                 return_value_only=True,
-                                                use_cache=False)[:, :-1]
+                                                # use_cache=False
+                                                )[:, :-1]
         critic_loss = self.critic_loss_fn(value[:, start:], old_values[:,
                                                                        start:],
                                           returns, action_mask[:, start:])
@@ -187,6 +188,7 @@ class DeepSpeedPPOTrainer():
 
     def actor_loss_fn(self, logprobs, old_logprobs, advantages, mask):
         ## policy gradient loss
+        ## 2017-Proximal Policy Optimization Algorithms Equation 7
         log_ratio = (logprobs - old_logprobs) * mask
         ratio = torch.exp(log_ratio)
         pg_loss1 = -advantages * ratio
@@ -196,7 +198,8 @@ class DeepSpeedPPOTrainer():
         return pg_loss
 
     def critic_loss_fn(self, values, old_values, returns, mask):
-        ## value loss
+        ## value loss, old_values are used to limit the scope of values
+        ## 2017-Proximal Policy Optimization Algorithms Equation 9
         values_clipped = torch.clamp(
             values,
             old_values - self.cliprange_value,
