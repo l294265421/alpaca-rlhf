@@ -135,8 +135,8 @@ class DeepSpeedPPOTrainer():
         reward_clip = torch.clamp(reward_score, -self.clip_reward_value,
                                   self.clip_reward_value)
         batch_size = log_probs.shape[0]
-        for j in range(batch_size):
-            rewards[j, start:ends[j]][-1] += reward_clip[j]
+        # for j in range(batch_size):
+        #     rewards[j, start:ends[j]][-1] += reward_clip[j]
 
         return rewards
 
@@ -164,7 +164,9 @@ class DeepSpeedPPOTrainer():
 
         ### process the new outputs
         batch = {'input_ids': seq, "attention_mask": attention_mask}
-        actor_prob = self.actor_model(**batch, use_cache=False).logits
+        actor_prob = self.actor_model(**batch,
+                                      # use_cache=False
+                                      ).logits
         actor_log_prob = gather_log_probs(actor_prob[:, :-1, :],
                                           inputs['input_ids'][:, 1:])
         actor_loss = self.actor_loss_fn(actor_log_prob[:, start:],
@@ -207,7 +209,14 @@ class DeepSpeedPPOTrainer():
         return vf_loss
 
     def get_advantages_and_returns(self, values, rewards, start):
+        """
+        https://spinningup.openai.com/en/latest/spinningup/rl_intro.html
         # Adopted from https://github.com/CarperAI/trlx/blob/main/trlx/models/modeling_ppo.py#L134
+        :param values:
+        :param rewards:
+        :param start:
+        :return:
+        """
         lastgaelam = 0
         advantages_reversed = []
         length = rewards.size()[-1]
