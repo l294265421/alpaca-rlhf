@@ -42,3 +42,6 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 ### Repositories
 - [my-alpaca](https://github.com/l294265421/my-alpaca)
 - [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca)
+
+### Tips
+- DeepSpeed-Chat implements PPO following [2017-Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347) except for the entropy bonus.
