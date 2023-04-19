@@ -59,7 +59,7 @@ def parse_args():
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
         required=False,
-        default='decapoda-research/llama-7b-hf',
+        default='/root/.cache/huggingface/hub/models--decapoda-research--llama-7b-hf/snapshots/5f98eefcc80e437ef68d457ad7bf167c2c6a1348'
         # default='openai-gpt'
     )
     parser.add_argument(
@@ -85,7 +85,7 @@ def parse_args():
     parser.add_argument(
         "--max_seq_len",
         type=int,
-        default=512,
+        default=1024,
         help="The maximum sequence length.",
     )
     parser.add_argument(
@@ -123,7 +123,7 @@ def parse_args():
     parser.add_argument(
         "--num_warmup_steps",
         type=int,
-        default=0,
+        default=100,
         help="Number of steps for the warmup in the lr scheduler.")
     parser.add_argument("--output_dir",
                         type=str,

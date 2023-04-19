@@ -54,7 +54,7 @@ def parse_args():
         '--data_output_path',
         type=str,
         # default='/tmp/data_files/',
-        default='/root/autodl-tmp/',
+        default='/root/autodl-tmp/rlhf/tmp/',
         help=
         'Where to store the data-related files such as shuffle index. This needs to be on a local storage of a node (not on a shared storage)'
     )
@@ -64,8 +64,7 @@ def parse_args():
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
         required=False,
-        # default='decapoda-research/llama-7b-hf',
-        default='openai-gpt'
+        default='/root/.cache/huggingface/hub/models--decapoda-research--llama-7b-hf/snapshots/5f98eefcc80e437ef68d457ad7bf167c2c6a1348'
     )
     parser.add_argument(
         "--per_device_train_batch_size",
@@ -82,7 +81,7 @@ def parse_args():
     parser.add_argument(
         "--max_seq_len",
         type=int,
-        default=512,
+        default=1024,
         help="The maximum sequence length.",
     )
     parser.add_argument(
@@ -120,7 +119,7 @@ def parse_args():
     parser.add_argument(
         "--num_warmup_steps",
         type=int,
-        default=0,
+        default=100,
         help="Number of steps for the warmup in the lr scheduler.")
     parser.add_argument("--output_dir",
                         type=str,
@@ -153,7 +152,7 @@ def parse_args():
                         help="If > 0, use LoRA for efficient training.")
     parser.add_argument("--lora_module_name",
                         type=str,
-                        default="decoder.layers.",
+                        default="q_proj,k_proj",
                         help="The scope of LoRA.")
     parser.add_argument('--only_optimize_lora',
                         action='store_true',
@@ -201,11 +200,9 @@ def main():
     torch.distributed.barrier()
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
-                                              fast_tokenizer=True)
-    # tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path)
-    if tokenizer.eos_token is None:
-        tokenizer.eos_token = '[PAD]'
-    tokenizer.pad_token = tokenizer.eos_token
+                                              # fast_tokenizer=True
+                                              )
+    tokenizer.pad_token_id = 0
 
     model = create_hf_model(AutoModelForCausalLM, args.model_name_or_path,
                             tokenizer, ds_config)

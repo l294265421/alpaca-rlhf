@@ -80,8 +80,8 @@ class DeepSpeedPPOTrainer():
         prompt_length = prompts.shape[1]
         ans = seq[:, prompt_length:]
         self.prompt_length = prompt_length
-        # valid_ans_len = (ans != self.tokenizer.pad_token_id).sum(dim=-1)
-        valid_ans_len = (ans != 2).sum(dim=-1)
+        valid_ans_len = (ans != self.tokenizer.pad_token_id).sum(dim=-1)
+        # valid_ans_len = (ans != 2).sum(dim=-1)
         out_seq = []
         for i in range(batch_size):
             if valid_ans_len[
