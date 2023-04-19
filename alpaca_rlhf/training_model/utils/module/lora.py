@@ -85,6 +85,22 @@ class LinearLayer_LoRA(nn.Module):
                               @ self.lora_left_weight) * self.lora_scaling
 
 
+def is_target_module(module_name, part_module_names):
+    """
+
+    :param module_name:
+    :param part_module_names:
+    :return:
+    """
+    part_module_name_list = part_module_names.split(',')
+    result = False
+    for part in part_module_name_list:
+        if part in module_name:
+            result = True
+            break
+    return result
+
+
 # convert the linear layer to LoRA
 def convert_linear_layer_to_lora(model,
                                  part_module_name,
@@ -93,7 +109,7 @@ def convert_linear_layer_to_lora(model,
                                  lora_droppout=0):
     repalce_name = []
     for name, module in model.named_modules():
-        if isinstance(module, nn.Linear) and part_module_name in name:
+        if isinstance(module, nn.Linear) and is_target_module(name, part_module_name):
             repalce_name.append(name)
     for name in repalce_name:
         module = recursive_getattr(model, name)

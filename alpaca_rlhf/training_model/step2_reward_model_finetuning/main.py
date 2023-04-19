@@ -51,7 +51,7 @@ def parse_args():
         '--data_output_path',
         type=str,
         # default='/tmp/data_files/',
-        default='/root/autodl-tmp/',
+        default='/root/autodl-tmp/rlhf/',
         help='Where to store the data-related files such as shuffle index.')
     parser.add_argument(
         "--model_name_or_path",
@@ -59,8 +59,8 @@ def parse_args():
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
         required=False,
-        # default='decapoda-research/llama-7b-hf',
-        default='openai-gpt'
+        default='decapoda-research/llama-7b-hf',
+        # default='openai-gpt'
     )
     parser.add_argument(
         "--num_padding_at_beginning",
@@ -157,7 +157,7 @@ def parse_args():
                         help="If > 0, use LoRA for efficient training.")
     parser.add_argument("--lora_module_name",
                         type=str,
-                        default="decoder.layers.",
+                        default='q_proj,k_proj',
                         help="The scope of LoRA.")
     parser.add_argument('--only_optimize_lora',
                         action='store_true',
