@@ -17,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path",
                         type=str,
-                        default='facebook/opt-350m',
+                        default='facebook/opt-125m',
                         help="Directory containing trained actor model")
     parser.add_argument(
         "--max_new_tokens",
