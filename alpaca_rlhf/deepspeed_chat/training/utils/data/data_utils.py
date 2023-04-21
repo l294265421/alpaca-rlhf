@@ -123,7 +123,7 @@ class PromptDataset(Dataset):
             return {
                 "input_ids": self.chosen_dataset[idx]["input_ids"],
                 "attention_mask": self.chosen_dataset[idx]["attention_mask"],
-                "labels": self.chosen_dataset[idx]["input_ids"]
+                "labels": self.chosen_dataset[idx]["labels"]
             }
         elif self.train_phase == 2:
             return self.chosen_dataset[idx]["input_ids"], self.chosen_dataset[idx]["attention_mask"], \
@@ -143,17 +143,27 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
             # tokenize the text
             chosen_sentence = raw_dataset.get_prompt_and_chosen(
                 tmp_data)  # the accept response
+            real_chosen_sentence = raw_dataset.get_chosen(tmp_data)
             if chosen_sentence is not None:
-                chosen_sentence += end_of_conversation_token
+                # chosen_sentence += end_of_conversation_token
                 chosen_token = tokenizer(chosen_sentence,
                                          max_length=max_seq_len,
                                          padding="max_length",
                                          truncation=True,
                                          return_tensors="pt")
-                chosen_token["input_ids"] = chosen_token["input_ids"].squeeze(
-                    0)
+                chosen_token["input_ids"] = chosen_token["input_ids"].squeeze(0)
                 chosen_token["attention_mask"] = chosen_token[
                     "attention_mask"].squeeze(0)
+
+                # real_chosen_sentence += end_of_conversation_token
+                real_chosen_token = tokenizer(real_chosen_sentence,
+                                              max_length=max_seq_len,
+                                              # padding="max_length",
+                                              truncation=True,
+                                              return_tensors="pt")
+                response_len = len(real_chosen_token["input_ids"][0]) - 1
+                chosen_token["labels"] = chosen_token["input_ids"].clone()
+                chosen_token["labels"][: max_seq_len - response_len] = -100
                 chosen_dataset.append(chosen_token)
 
     elif train_phase == 2:

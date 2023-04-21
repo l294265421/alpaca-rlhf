@@ -21,7 +21,9 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-path = "/root/autodl-tmp/rlhf/final/actor"
+path = "/root/autodl-tmp/rlhf/actor"
+# path = 'facebook/opt-1.3b'
+# path = 'facebook/opt-350m'
 tokenizer = AutoTokenizer.from_pretrained(path, fast_tokenizer=True)
 tokenizer.pad_token = tokenizer.eos_token
 tokenizer.padding_side = "left"
@@ -129,6 +131,7 @@ def reset_state():
 
 with gr.Blocks() as demo:
     gr.HTML("""<h1 align="center">Alpaca-RLHF (主要支持英文)</h1>""")
+    gr.HTML("""<h1 align="center"><a href="https://github.com/l294265421/alpaca-rlhf">GitHub</a></h1>""")
 
     chatbot = gr.Chatbot()
     with gr.Row():
