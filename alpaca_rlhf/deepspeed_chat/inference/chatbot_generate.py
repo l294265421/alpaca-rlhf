@@ -17,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path",
                         type=str,
-                        default='facebook/opt-125m',
+                        default='/root/autodl-tmp/rlhf/final/actor',
                         help="Directory containing trained actor model")
     parser.add_argument(
         "--max_new_tokens",
@@ -92,8 +92,7 @@ def get_generator(path):
 
 
 def get_user_input(user_input):
-    # tmp = input("Enter input (type 'quit' to exit, 'clear' to clean memory): ")
-    tmp = 'Who are you?'
+    tmp = input("Enter input (type 'quit' to exit, 'clear' to clean memory): ")
     new_inputs = f"Human: {tmp}\n Assistant: "
     user_input += f" {new_inputs}"
     return user_input, tmp == "quit", tmp == "clear"
