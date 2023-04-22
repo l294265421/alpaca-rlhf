@@ -185,7 +185,7 @@ def parse_args():
                         help="Where to store the model.")
     parser.add_argument("--seed",
                         type=int,
-                        default=None,
+                        default=1234,
                         help="A seed for reproducible training.")
     parser.add_argument(
         "--preprocessing_num_workers",

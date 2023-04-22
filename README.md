@@ -6,18 +6,10 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 
 
 ## Stey by Step
-### Remote Debug Using PyCharm
-- [Bootstrap Script](alpaca_rlhf/training_model/my_deepspeed.py)
-  - single gpu args
-    - step1: --num_gpus 1 /tmp/pycharm_project_227/alpaca_rlhf/training_model/step1_supervised_finetuning/main.py --gradient_accumulation_steps 2 --lora_dim 128 --zero_stage 0 --deepspeed --output_dir /root/autodl-tmp/actor
-    - step2: --num_gpus 1 /tmp/pycharm_project_227/alpaca_rlhf/training_model/step2_reward_model_finetuning/main.py --num_padding_at_beginning 0 --gradient_accumulation_steps 2 --zero_stage 0 --deepspeed --output_dir /root/autodl-tmp/critic
-    - step3: /tmp/pycharm_project_227/alpaca_rlhf/training_model/step3_rlhf_finetuning/main.py --actor_model_name_or_path /root/autodl-tmp/actor --critic_model_name_or_path /root/autodl-tmp/critic  --actor_zero_stage 0 --critic_zero_stage 0 --num_padding_at_beginning 0 --gradient_accumulation_steps 2 --deepspeed --actor_lora_dim 128 --enable_hybrid_engine --actor_gradient_checkpointing --output_dir /root/autodl-tmp/final
-
-### Prepare Data
-
-### Training Reward Model
-
-### Finetuning Language Model
+- [Bootstrap Script](alpaca_rlhf/my_deepspeed.py)
+    - step1: --num_gpus 3 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step1_supervised_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --model_name_or_path decapoda-research/llama-7b-hf --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 2 --num_warmup_steps 100 --output_dir /root/autodl-tmp/rlhf/actor --lora_dim 8 --lora_module_name q_proj,k_proj --only_optimize_lora --deepspeed --zero_stage 2
+    - step2: --num_gpus 3 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step2_reward_model_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --model_name_or_path decapoda-research/llama-7b-hf --num_padding_at_beginning 0 --per_device_train_batch_size 2 --per_device_eval_batch_size 2 --gradient_accumulation_steps 2 --num_warmup_steps 100 --zero_stage 2 --deepspeed --output_dir /root/autodl-tmp/rlhf/critic --lora_dim 4 --lora_module_name q_proj,k_proj --only_optimize_lora
+    - step3: --num_gpus 3 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --actor_model_name_or_path /root/autodl-tmp/rlhf/actor/ --critic_model_name_or_path /root/autodl-tmp/rlhf/critic --actor_zero_stage 2 --critic_zero_stage 2 --num_padding_at_beginning 0 --per_device_train_batch_size 1 --per_device_mini_train_batch_size 1 --gradient_accumulation_steps 2 --deepspeed --enable_hybrid_engine --actor_lora_dim 2 --actor_lora_module_name q_proj,k_proj --critic_lora_dim 2 --critic_lora_module_name q_proj,k_proj --only_optimize_lora --output_dir /root/autodl-tmp/rlhf/final
 
 ## References
 
