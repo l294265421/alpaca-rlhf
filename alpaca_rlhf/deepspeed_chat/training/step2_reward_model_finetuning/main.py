@@ -201,7 +201,10 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
                                               fast_tokenizer=True)
-    tokenizer.pad_token = tokenizer.eos_token
+    # tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token_id = (
+        0  # unk. we want this to be different from the eos token
+    )
 
     rm_model = create_critic_model(args.model_name_or_path, tokenizer,
                                    ds_config, args.num_padding_at_beginning)

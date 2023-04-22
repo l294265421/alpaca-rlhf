@@ -13,7 +13,7 @@ from datasets import load_dataset
 import numpy as np
 import os
 from itertools import chain
-from . import raw_datasets
+from alpaca_rlhf.deepspeed_chat.training.utils.data import raw_datasets
 
 
 def get_raw_dataset(dataset_name, output_path, seed, local_rank):
@@ -96,7 +96,6 @@ def get_raw_dataset_split_index(local_rank, output_path, dataset_name, seed,
             np.save(shuffle_idx_split_file_name,
                     shuffle_idx_split,
                     allow_pickle=True)
-    torch.distributed.barrier()
     index = np.load(index_file_name, allow_pickle=True)
     return index.tolist()
 
@@ -270,7 +269,6 @@ def create_prompt_dataset(local_rank,
 
     cache_found = os.path.isfile(train_fname) and os.path.isfile(eval_fname)
     buf_create_cache = torch.ByteTensor([not cache_found]).cuda()
-    torch.distributed.all_reduce(buf_create_cache)
 
     # Skip creating cache if we found it on all the nodes.
     if buf_create_cache.item() == 0:

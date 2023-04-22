@@ -202,7 +202,10 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
                                               fast_tokenizer=True)
-    tokenizer.pad_token = tokenizer.eos_token
+    # tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token_id = (
+        0  # unk. we want this to be different from the eos token
+    )
     tokenizer.padding_side = "left"
 
     model = create_hf_model(AutoModelForCausalLM, args.model_name_or_path,

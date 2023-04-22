@@ -11,7 +11,8 @@ import torch
 import transformers
 from peft import PeftModel
 from transformers import GenerationConfig
-from transformers import AutoConfig, OPTForCausalLM, AutoTokenizer
+from transformers import LlamaForCausalLM
+from transformers import LlamaTokenizer
 from transformers import GenerationConfig
 import mdtex2html
 
@@ -24,20 +25,16 @@ else:
 path = "/root/autodl-tmp/rlhf/actor"
 # path = 'facebook/opt-1.3b'
 # path = 'facebook/opt-350m'
-tokenizer = AutoTokenizer.from_pretrained(path, fast_tokenizer=True)
-tokenizer.pad_token_id = (
-        0  # unk. we want this to be different from the eos token
-    )
-tokenizer.padding_side = "left"
+tokenizer = LlamaTokenizer.from_pretrained(path)
 
-model_config = AutoConfig.from_pretrained(path)
-model = OPTForCausalLM.from_pretrained(path,
-                                       from_tf=bool(".ckpt" in path),
-                                       config=model_config, device_map='auto')
+model = LlamaForCausalLM.from_pretrained(
+    path,
+    load_in_8bit=False,
+    torch_dtype=torch.float16,
+    device_map="auto",
+)
+
 model.eval()
-model.config.end_token_id = tokenizer.eos_token_id
-model.config.pad_token_id = model.config.eos_token_id
-model.resize_token_embeddings(len(tokenizer))
 
 
 """Override Chatbot.postprocess"""

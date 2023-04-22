@@ -26,6 +26,7 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 
 ### Tools
 - [DeepSpeed-Chat](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat)
+- [trlx](https://github.com/CarperAI/trlx)
 
 ### Datasets
 - [Stanford Human Preferences Dataset (SHP)](https://huggingface.co/datasets/stanfordnlp/SHP)

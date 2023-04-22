@@ -12,7 +12,7 @@ from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-from utils.utils import print_rank_0
+from alpaca_rlhf.deepspeed_chat.training.utils.utils import print_rank_0
 
 
 def print_all_ranks(tag, value, rank):

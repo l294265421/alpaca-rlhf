@@ -12,8 +12,8 @@ import sys
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-from alpaca_rlhf.deepspeed_chat.training.utils.model.model_utils import create_critic_model
-from alpaca_rlhf.deepspeed_chat.training.utils.utils import to_device
+from utils.model.model_utils import create_critic_model
+from utils.utils import to_device
 
 
 def parse_args():
