@@ -437,8 +437,8 @@ def main():
                     for i, (exp_data, unsup_data) in enumerate(
                             zip(exp_dataset, unsup_dataset)):
                         actor_loss, critic_loss = trainer.train_rlhf(exp_data)
-                        critic_loss += actor_loss.item()
-                        actor_loss += critic_loss.item()
+                        critic_loss += critic_loss.item()
+                        actor_loss += actor_loss.item()
                         average_reward += exp_data["rewards"].mean()
 
                         if unsupervised_training_enabled:
