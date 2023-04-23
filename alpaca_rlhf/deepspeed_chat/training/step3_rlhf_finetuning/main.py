@@ -376,7 +376,10 @@ def main():
     # create common tokenizer based on actor model
     tokenizer = AutoTokenizer.from_pretrained(args.actor_model_name_or_path,
                                               fast_tokenizer=True)
-    tokenizer.pad_token = tokenizer.eos_token
+    # tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token_id = (
+        0  # unk. we want this to be different from the eos token
+    )
 
     prompt_train_dataloader, unsupervised_train_dataloader, num_total_iters = create_datasets(
         args=args, tokenizer=tokenizer, train_phase=3)

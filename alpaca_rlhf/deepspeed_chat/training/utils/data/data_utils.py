@@ -206,9 +206,9 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
                     if length > max_seq_len:
                         y = prompt_token[key_word].squeeze(0)[length -
                                                               (max_seq_len -
-                                                               1):].flip(0)
+                                                               1):].flip(0) # todo: bug
                     else:
-                        y = prompt_token[key_word].squeeze(0).flip(0)
+                        y = prompt_token[key_word].squeeze(0).flip(0) # todo: why flip? DataCollatorRLHF 用于实现left padding
                     prompt_token[key_word] = y
                 prompt_dataset.append(prompt_token)
     return PromptDataset(prompt_dataset, chosen_dataset, reject_dataset,
