@@ -16,14 +16,10 @@ nohup sh run.sh --num_gpus 3 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat
 
 Step3:
 single gpu:
-nohup sh run.sh --num_gpus 1 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --actor_model_name_or_path /root/autodl-tmp/rlhf/actor/ --critic_model_name_or_path /root/autodl-tmp/rlhf/critic --actor_zero_stage 0 --critic_zero_stage 0 --num_padding_at_beginning 0 --per_device_train_batch_size 1 --per_device_mini_train_batch_size 1 --gradient_accumulation_steps 2 --deepspeed --actor_lora_dim 2 --actor_lora_module_name q_proj,k_proj --critic_lora_dim 2 --critic_lora_module_name q_proj,k_proj --only_optimize_lora --output_dir /root/autodl-tmp/rlhf/final > step2.log 2>&1 &
+nohup sh run.sh --num_gpus 1 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --actor_model_name_or_path /root/autodl-tmp/rlhf/actor/ --critic_model_name_or_path /root/autodl-tmp/rlhf/critic --actor_zero_stage 0 --critic_zero_stage 0 --num_padding_at_beginning 0 --per_device_train_batch_size 1 --per_device_mini_train_batch_size 1 --max_prompt_seq_len 128 --max_answer_seq_len 128 --gradient_accumulation_steps 2 --deepspeed --actor_lora_dim 2 --actor_lora_module_name q_proj,k_proj --critic_lora_dim 2 --critic_lora_module_name q_proj,k_proj --only_optimize_lora --output_dir /root/autodl-tmp/rlhf/final > step3.log 2>&1 &
 
 single node:
-nohup sh run.sh --num_gpus 3 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --actor_model_name_or_path /root/autodl-tmp/rlhf/actor/ --critic_model_name_or_path /root/autodl-tmp/rlhf/critic --actor_zero_stage 2 --critic_zero_stage 2 --num_padding_at_beginning 0 --per_device_train_batch_size 1 --per_device_mini_train_batch_size 1 --gradient_accumulation_steps 2 --deepspeed --actor_lora_dim 2 --actor_lora_module_name q_proj,k_proj --critic_lora_dim 2 --critic_lora_module_name q_proj,k_proj --only_optimize_lora --output_dir /root/autodl-tmp/rlhf/final > step2.log 2>&1 &
-
- --actor_gradient_checkpointing --critic_gradient_checkpointing
-
- --actor_lora_dim 8 --actor_lora_module_name q_proj,k_proj --critic_lora_dim 4 --critic_lora_module_name q_proj,k_proj --only_optimize_lora
+nohup sh run.sh --num_gpus 3 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --actor_model_name_or_path /root/autodl-tmp/rlhf/actor/ --critic_model_name_or_path /root/autodl-tmp/rlhf/critic --actor_zero_stage 2 --critic_zero_stage 2 --num_padding_at_beginning 0 --per_device_train_batch_size 1 --per_device_mini_train_batch_size 1 --gradient_accumulation_steps 2 --deepspeed --actor_lora_dim 2 --actor_lora_module_name q_proj,k_proj --critic_lora_dim 2 --critic_lora_module_name q_proj,k_proj --only_optimize_lora --output_dir /root/autodl-tmp/rlhf/final > step3.log 2>&1 &
 
 """
 import os
