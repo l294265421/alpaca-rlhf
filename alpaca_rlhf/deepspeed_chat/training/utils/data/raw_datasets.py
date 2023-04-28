@@ -77,10 +77,12 @@ class DahoasRmstaticDataset(PromptRawDataset):
         return sample['prompt'] + sample['rejected']
 
 
-class MultiTurnAlpacaDataset(PromptRawDataset):
+class MultiTurnAlpacaDataset:
 
     def __init__(self, output_path, seed, local_rank, dataset_name):
-        super().__init__(output_path, seed, local_rank, dataset_name)
+        self.output_path = output_path
+        self.seed = seed
+        self.local_rank = local_rank
         self.dataset_name = dataset_name
         self.dataset_name_clean = dataset_name
         data_dict = {

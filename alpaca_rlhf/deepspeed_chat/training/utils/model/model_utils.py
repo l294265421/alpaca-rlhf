@@ -41,13 +41,13 @@ def create_hf_model(model_class,
 
     # model.config.end_token_id = tokenizer.eos_token_id
     # model.config.pad_token_id = model.config.eos_token_id
-    model.config.bos_token_id = tokenizer.bos_token_id
-    model.config.end_token_id = tokenizer.eos_token_id
-    model.config.pad_token_id = tokenizer.pad_token_id
+    # model.config.bos_token_id = tokenizer.bos_token_id
+    # model.config.end_token_id = tokenizer.eos_token_id
+    # model.config.pad_token_id = tokenizer.pad_token_id
 
     model.resize_token_embeddings(int(
         8 *
-        math.ceil(len(tokenizer) / 8.0)))  # make the vocab size multiple of 8
+        math.ceil(len(tokenizer) / 8.0)))  # make the vocab size multiple of 8 todo: why?
 
     return model
 

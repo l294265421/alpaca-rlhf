@@ -26,6 +26,7 @@ path = "/root/autodl-tmp/rlhf/actor"
 # path = 'facebook/opt-1.3b'
 # path = 'facebook/opt-350m'
 tokenizer = LlamaTokenizer.from_pretrained(path)
+tokenizer.add_bos_token = False
 
 model = LlamaForCausalLM.from_pretrained(
     path,
@@ -113,7 +114,9 @@ def predict(input, chatbot, max_new_tokens, num_beams, do_sample, temperature, t
         )
     s = generation_output.sequences[0]
     output = tokenizer.decode(s)
+    print('output: %s' % output)
     response = output[len(prompt):]
+    print('response: %s' % response)
 
     chatbot.append((parse_text(input), parse_text(response)))
     history = instruction + response

@@ -399,6 +399,7 @@ def main():
         args=args)
 
     args.end_of_conversation_token = "<|endoftext|>"
+    args.end_of_conversation_token = ""
 
     ppo_trainer = DeepSpeedPPOTrainerUnsupervised if unsupervised_training_enabled else DeepSpeedPPOTrainer
     trainer = ppo_trainer(rlhf_engine, args)
