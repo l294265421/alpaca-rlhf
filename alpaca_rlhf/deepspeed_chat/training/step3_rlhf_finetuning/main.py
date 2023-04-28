@@ -149,11 +149,11 @@ def parse_args():
     )
     parser.add_argument("--actor_weight_decay",
                         type=float,
-                        default=0.1,
+                        default=0.,
                         help="Weight decay to use.")
     parser.add_argument("--critic_weight_decay",
                         type=float,
-                        default=0.1,
+                        default=0.,
                         help="Weight decay to use.")
     parser.add_argument("--num_train_epochs",
                         type=int,
@@ -185,7 +185,7 @@ def parse_args():
                         help="Where to store the model.")
     parser.add_argument("--seed",
                         type=int,
-                        default=1234,
+                        default=None,
                         help="A seed for reproducible training.")
     parser.add_argument(
         "--preprocessing_num_workers",
@@ -256,6 +256,12 @@ def parse_args():
         '--critic_gradient_checkpointing',
         action='store_true',
         help='Enable HF gradient checkpointing for Critic model.')
+    parser.add_argument('--disable_actor_dropout',
+                        action='store_true',
+                        help='Disable the dropout of the actor model.')
+    parser.add_argument('--disable_critic_dropout',
+                        action='store_true',
+                        help='Disable the dropout of the critical model.')
     ## LoRA for efficient training setting
     parser.add_argument("--actor_lora_dim",
                         type=int,
@@ -290,7 +296,7 @@ def parse_args():
                                              and args.critic_lora_dim > 0):
         assert (
             not args.only_optimize_lora
-        ), "--{actor,critic}_gradient_checkpointing and --only_optimizer_lora cannot be enabled at the same time."
+        ), "--{actor,critic}_gradient_checkpointing and --only_optimize_lora cannot be enabled at the same time."
 
     if args.inference_tp_size > 1:
         assert (
@@ -392,8 +398,7 @@ def main():
         num_total_iters=num_total_iters,
         args=args)
 
-    # args.end_of_conversation_token = "<|endoftext|>"
-    args.end_of_conversation_token = ''
+    args.end_of_conversation_token = "<|endoftext|>"
 
     ppo_trainer = DeepSpeedPPOTrainerUnsupervised if unsupervised_training_enabled else DeepSpeedPPOTrainer
     trainer = ppo_trainer(rlhf_engine, args)
@@ -431,7 +436,7 @@ def main():
 
             if exp_dataset is not None:
                 inner_iter = 0
-                critic_loss, actor_loss, unsuper_loss = 0, 0, 0
+                actor_loss_sum, critic_loss_sum, unsup_loss_sum = 0, 0, 0
                 average_reward = 0
 
                 if args.actor_gradient_checkpointing:
@@ -441,14 +446,14 @@ def main():
                     for i, (exp_data, unsup_data) in enumerate(
                             zip(exp_dataset, unsup_dataset)):
                         actor_loss, critic_loss = trainer.train_rlhf(exp_data)
-                        critic_loss += critic_loss.item()
-                        actor_loss += actor_loss.item()
+                        actor_loss_sum += actor_loss.item()
+                        critic_loss_sum += critic_loss.item()
                         average_reward += exp_data["rewards"].mean()
 
                         if unsupervised_training_enabled:
                             unsup_loss = trainer.train_unsupervised(
                                 unsup_data, args.unsup_coef)
-                            unsuper_loss += unsup_loss.item()
+                            unsup_loss_sum += unsup_loss.item()
 
                         inner_iter += 1
                         if args.enable_ema:
@@ -460,7 +465,7 @@ def main():
                     random.shuffle(unsup_dataset)
 
                 print_rank_0(
-                    f'epoch: {epoch}|step: {step}|ppo_ep: {ppo_ep+1}|act_loss: {actor_loss/inner_iter}|cri_loss: {critic_loss/inner_iter}|unsuper_loss: {unsuper_loss/inner_iter}',
+                    f'epoch: {epoch}|step: {step}|ppo_ep: {ppo_ep+1}|act_loss: {actor_loss_sum/inner_iter}|cri_loss: {critic_loss_sum/inner_iter}|unsuper_loss: {unsup_loss_sum/inner_iter}',
                     args.global_rank)
                 average_reward = get_all_reduce_mean(average_reward).item()
                 print_rank_0(

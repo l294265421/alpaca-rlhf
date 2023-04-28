@@ -94,7 +94,7 @@ def parse_args():
     )
     parser.add_argument("--weight_decay",
                         type=float,
-                        default=0.1,
+                        default=0.,
                         help="Weight decay to use.")
     parser.add_argument("--num_train_epochs",
                         type=int,
@@ -138,6 +138,9 @@ def parse_args():
         '--gradient_checkpointing',
         action='store_true',
         help='Enable HF gradient checkpointing for Actor model.')
+    parser.add_argument('--disable_dropout',
+                        action='store_true',
+                        help='Disable the dropout of the model.')
     # deepspeed features
     parser.add_argument('--offload',
                         action='store_true',
@@ -166,7 +169,7 @@ def parse_args():
     if args.gradient_checkpointing and args.lora_dim > 0:
         assert (
             not args.only_optimize_lora
-        ), "--gradient_checkpointing and --only_optimizer_lora cannot be enabled at the same time."
+        ), "--gradient_checkpointing and --only_optimize_lora cannot be enabled at the same time."
 
     return args
 
@@ -206,8 +209,11 @@ def main():
         0  # unk. we want this to be different from the eos token
     )
 
-    rm_model = create_critic_model(args.model_name_or_path, tokenizer,
-                                   ds_config, args.num_padding_at_beginning)
+    rm_model = create_critic_model(args.model_name_or_path,
+                                   tokenizer,
+                                   ds_config,
+                                   args.num_padding_at_beginning,
+                                   disable_dropout=args.disable_dropout)
 
     if args.lora_dim > 0:
         rm_model = convert_linear_layer_to_lora(rm_model,
@@ -257,8 +263,8 @@ def main():
             scores += outputs["chosen_mean_scores"].mean().float()
             if step == 99:  # For faster evaluation and debugging
                 break
-        acc = correct_predictions / total_predictions
-        scores = scores / (step + 1)
+            acc = correct_predictions / total_predictions
+            scores = scores / (step + 1)
         try:
             acc = get_all_reduce_mean(acc).item()
             scores = get_all_reduce_mean(scores).item()
