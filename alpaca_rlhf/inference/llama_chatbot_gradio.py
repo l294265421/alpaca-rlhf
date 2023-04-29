@@ -25,8 +25,7 @@ else:
 path = "/root/autodl-tmp/rlhf/actor"
 # path = 'facebook/opt-1.3b'
 # path = 'facebook/opt-350m'
-tokenizer = LlamaTokenizer.from_pretrained(path)
-tokenizer.add_bos_token = False
+tokenizer = LlamaTokenizer.from_pretrained('decapoda-research/llama-7b-hf')
 
 model = LlamaForCausalLM.from_pretrained(
     path,
@@ -34,6 +33,10 @@ model = LlamaForCausalLM.from_pretrained(
     torch_dtype=torch.float16,
     device_map="auto",
 )
+
+model.config.pad_token_id = tokenizer.pad_token_id = 0  # unk
+model.config.bos_token_id = 1
+model.config.eos_token_id = 2
 
 model.eval()
 

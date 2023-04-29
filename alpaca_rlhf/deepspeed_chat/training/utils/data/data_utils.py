@@ -149,19 +149,17 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
     if train_phase == 1:
         for i, tmp_data in enumerate(current_dataset):
             # tokenize the text
-            chosen_sentence = raw_dataset.get_prompt_and_chosen(
-                tmp_data)  # the accept response
+            prompt_sentence = raw_dataset.get_prompt(tmp_data)  # the accept response
             real_chosen_sentence = raw_dataset.get_chosen(tmp_data)
-            if chosen_sentence is not None:
+            if prompt_sentence is not None:
                 # chosen_sentence += end_of_conversation_token
-                chosen_token = tokenizer(chosen_sentence,
+                prompt_token = tokenizer(prompt_sentence,
                                          max_length=max_seq_len,
-                                         padding="max_length",
+                                         # padding="max_length",
                                          truncation=True,
                                          return_tensors="pt")
-                chosen_token["input_ids"] = chosen_token["input_ids"].squeeze(0)
-                chosen_token["attention_mask"] = chosen_token[
-                    "attention_mask"].squeeze(0)
+                prompt_token["input_ids"] = prompt_token["input_ids"].squeeze(0)
+                prompt_token["attention_mask"] = prompt_token["attention_mask"].squeeze(0)
 
                 # real_chosen_sentence += end_of_conversation_token
                 real_chosen_token = tokenizer(real_chosen_sentence,
@@ -169,10 +167,28 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
                                               # padding="max_length",
                                               truncation=True,
                                               return_tensors="pt")
-                response_len = len(real_chosen_token["input_ids"][0]) - 1
-                chosen_token["labels"] = chosen_token["input_ids"].clone()
-                chosen_token["labels"][: max_seq_len - response_len] = -100
-                chosen_dataset.append(chosen_token)
+                real_chosen_token["input_ids"] = real_chosen_token["input_ids"].squeeze(0)
+                real_chosen_token["attention_mask"] = real_chosen_token["attention_mask"].squeeze(0)
+
+                chosen_token_input_ids = torch.cat([prompt_token["input_ids"],
+                                                    real_chosen_token["input_ids"][1:],
+                                                    torch.Tensor([tokenizer.eos_token_id]).long()
+                                                    ]
+                                                   )[max_seq_len * -1:]
+                chosen_token_attention_mask = torch.cat([prompt_token["attention_mask"],
+                                                         real_chosen_token["attention_mask"][1:],
+                                                         torch.Tensor([1]).long()
+                                                         ]
+                                                        )[max_seq_len * -1:]
+                chosen_token_len = len(chosen_token_input_ids)
+                prompt_token['input_ids'] = chosen_token_input_ids
+                prompt_token['attention_mask'] = chosen_token_attention_mask
+
+                response_len = len(real_chosen_token["input_ids"]) - 1
+
+                prompt_token["labels"] = prompt_token["input_ids"].clone()
+                prompt_token["labels"][: chosen_token_len - response_len] = -100
+                chosen_dataset.append(prompt_token)
 
     elif train_phase == 2:
         for i, tmp_data in enumerate(current_dataset):
@@ -327,14 +343,16 @@ def create_prompt_dataset(local_rank,
                 sft_train_size += len(sft_train_dataset)
                 sft_eval_size += len(sft_eval_dataset)
             if sft_train_datasets:  # Check if sft_train_datasets is not empty
-                sft_train_dataset = ConcatDataset(sft_train_datasets)
-                train_dataset = ConcatDataset(
-                    [train_dataset, sft_train_dataset])
+                # sft_train_dataset = ConcatDataset(sft_train_datasets)
+                # train_dataset = ConcatDataset(
+                #     [train_dataset, sft_train_dataset])
+                train_dataset = ConcatDataset(sft_train_datasets)
                 shuffle_idx = get_shuffle_idx(seed, len(train_dataset))
                 train_dataset = Subset(train_dataset, shuffle_idx.tolist())
             if sft_eval_datasets:  # Check if sft_eval_datasets is not empty
-                sft_eval_dataset = ConcatDataset(sft_eval_datasets)
-                eval_dataset = ConcatDataset([eval_dataset, sft_eval_dataset])
+                # sft_eval_dataset = ConcatDataset(sft_eval_datasets)
+                # eval_dataset = ConcatDataset([eval_dataset, sft_eval_dataset])
+                eval_dataset = ConcatDataset(sft_eval_datasets)
                 shuffle_idx = get_shuffle_idx(seed, len(eval_dataset))
                 eval_dataset = Subset(eval_dataset, shuffle_idx.tolist())
         torch.save(train_dataset, train_fname)

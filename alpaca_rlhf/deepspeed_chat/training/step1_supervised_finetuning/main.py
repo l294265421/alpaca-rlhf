@@ -19,6 +19,8 @@ from transformers import (
     default_data_collator,
     get_scheduler,
 )
+from transformers import LlamaTokenizer
+from transformers import DataCollatorForSeq2Seq
 
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
@@ -203,12 +205,10 @@ def main():
 
     torch.distributed.barrier()
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
-                                              fast_tokenizer=True)
+    tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,
+                                               fast_tokenizer=True)
     # tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.pad_token_id = (
-        0  # unk. we want this to be different from the eos token
-    )
+    tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
 
     model = create_hf_model(AutoModelForCausalLM,
@@ -243,12 +243,18 @@ def main():
     else:
         train_sampler = DistributedSampler(train_dataset)
         eval_sampler = DistributedSampler(eval_dataset)
+    data_collator = DataCollatorForSeq2Seq(
+        tokenizer,
+        pad_to_multiple_of=8,
+        return_tensors="pt",
+        padding=True
+    )
     train_dataloader = DataLoader(train_dataset,
-                                  collate_fn=default_data_collator,
+                                  collate_fn=data_collator,
                                   sampler=train_sampler,
                                   batch_size=args.per_device_train_batch_size)
     eval_dataloader = DataLoader(eval_dataset,
-                                 collate_fn=default_data_collator,
+                                 collate_fn=data_collator,
                                  sampler=eval_sampler,
                                  batch_size=args.per_device_eval_batch_size)
 
