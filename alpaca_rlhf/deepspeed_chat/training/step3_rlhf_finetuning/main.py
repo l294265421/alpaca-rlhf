@@ -57,7 +57,7 @@ def parse_args():
     parser.add_argument(
         '--data_split',
         type=str,
-        default='6,2,2',
+        default='1,7,2',
         help=
         'Comma-separated list of proportions for training phase 1, 2, and 3 data. For example the split `2,4,4` '
         'will use 60% of data for phase 1, 20% for phase 2 and 20% for phase 3.'
@@ -87,6 +87,12 @@ def parse_args():
                         help='''gamma in Equation 2 from InstructGPT paper''')
     parser.add_argument(
         "--actor_model_name_or_path",
+        type=str,
+        help=
+        "Path to pretrained model or model identifier from huggingface.co/models.",
+        required=True)
+    parser.add_argument(
+        "--tokenizer_name_or_path",
         type=str,
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
@@ -380,7 +386,7 @@ def main():
     torch.distributed.barrier()
 
     # create common tokenizer based on actor model
-    tokenizer = AutoTokenizer.from_pretrained(args.actor_model_name_or_path,
+    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path,
                                               fast_tokenizer=True)
     # tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = (

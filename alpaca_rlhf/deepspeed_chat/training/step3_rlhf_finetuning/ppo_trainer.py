@@ -215,7 +215,7 @@ class DeepSpeedPPOTrainer():
             lastgaelam = delta + self.gamma * self.lam * lastgaelam
             advantages_reversed.append(lastgaelam)
         advantages = torch.stack(advantages_reversed[::-1], dim=1)
-        returns = advantages + values[:, start:]
+        returns = advantages + values[:, start:]  # https://spinningup.openai.com/en/latest/spinningup/rl_intro.html
         return advantages.detach(), returns
 
     def _validate_training_mode(self):

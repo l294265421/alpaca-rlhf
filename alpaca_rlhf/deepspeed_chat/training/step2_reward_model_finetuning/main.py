@@ -42,7 +42,7 @@ def parse_args():
                         'form: dataset1-path dataset2-path ...')
     parser.add_argument('--data_split',
                         type=str,
-                        default='6,2,2',
+                        default='1,7,2',
                         help='Comma-separated list of proportions for training'
                         'phase 1, 2, and 3 data. For example the split `2,4,4`'
                         'will use 60% of data for phase 1, 20% for phase 2'
@@ -208,6 +208,7 @@ def main():
     tokenizer.pad_token_id = (
         0  # unk. we want this to be different from the eos token
     )
+    tokenizer.add_eos_token = True
 
     rm_model = create_critic_model(args.model_name_or_path,
                                    tokenizer,
@@ -263,8 +264,8 @@ def main():
             scores += outputs["chosen_mean_scores"].mean().float()
             if step == 99:  # For faster evaluation and debugging
                 break
-            acc = correct_predictions / total_predictions
-            scores = scores / (step + 1)
+        acc = correct_predictions / total_predictions
+        scores = scores / (step + 1)
         try:
             acc = get_all_reduce_mean(acc).item()
             scores = get_all_reduce_mean(scores).item()
