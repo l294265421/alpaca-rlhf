@@ -404,7 +404,7 @@ def main():
         num_total_iters=num_total_iters,
         args=args)
 
-    args.end_of_conversation_token = "<|endoftext|>"
+    # args.end_of_conversation_token = "<|endoftext|>"
     args.end_of_conversation_token = ""
 
     ppo_trainer = DeepSpeedPPOTrainerUnsupervised if unsupervised_training_enabled else DeepSpeedPPOTrainer
