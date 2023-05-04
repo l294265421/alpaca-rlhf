@@ -24,7 +24,6 @@ from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
 
 from transformers import (
-    AutoTokenizer,
     SchedulerType,
     default_data_collator,
 )
@@ -39,7 +38,7 @@ import sys
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from alpaca_rlhf.deepspeed_chat.training.utils.data.data_utils import create_prompt_dataset, MiniDataset, DataCollatorRLHF, get_unsupervised_data
-from alpaca_rlhf.deepspeed_chat.training.utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, moving_average, save_zero_three_model
+from alpaca_rlhf.deepspeed_chat.training.utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, moving_average, save_zero_three_model, load_hf_tokenizer
 from alpaca_rlhf.deepspeed_chat.training.utils.module.lora import convert_lora_to_linear_layer
 
 
@@ -57,7 +56,7 @@ def parse_args():
     parser.add_argument(
         '--data_split',
         type=str,
-        default='1,7,2',
+        default='2,4,4',
         help=
         'Comma-separated list of proportions for training phase 1, 2, and 3 data. For example the split `2,4,4` '
         'will use 60% of data for phase 1, 20% for phase 2 and 20% for phase 3.'
@@ -87,12 +86,6 @@ def parse_args():
                         help='''gamma in Equation 2 from InstructGPT paper''')
     parser.add_argument(
         "--actor_model_name_or_path",
-        type=str,
-        help=
-        "Path to pretrained model or model identifier from huggingface.co/models.",
-        required=True)
-    parser.add_argument(
-        "--tokenizer_name_or_path",
         type=str,
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
@@ -386,8 +379,8 @@ def main():
     torch.distributed.barrier()
 
     # create common tokenizer based on actor model
-    tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name_or_path,
-                                              fast_tokenizer=True)
+    tokenizer = load_hf_tokenizer(args.actor_model_name_or_path,
+                                  fast_tokenizer=True)
     # tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = (
         0  # unk. we want this to be different from the eos token
@@ -404,8 +397,7 @@ def main():
         num_total_iters=num_total_iters,
         args=args)
 
-    # args.end_of_conversation_token = "<|endoftext|>"
-    args.end_of_conversation_token = ""
+    args.end_of_conversation_token = "<|endoftext|>"
 
     ppo_trainer = DeepSpeedPPOTrainerUnsupervised if unsupervised_training_enabled else DeepSpeedPPOTrainer
     trainer = ppo_trainer(rlhf_engine, args)
@@ -432,13 +424,14 @@ def main():
             else:
                 unsup_dataset = unsup_mini_dataset.add(
                     [[None] * args.per_device_train_batch_size])
-            prompts = batch_prompt['prompt']
-            length = prompts.size(-1)
-            if length > args.max_prompt_seq_len:
-                prompts = prompts[:, length - args.max_prompt_seq_len:]
-                raise ValueError("Prompt length is too long")
+            # prompts = batch_prompt['prompt']
+            # length = prompts.size(-1)
+            # if length > args.max_prompt_seq_len:
+            #     prompts = prompts[:, length - args.max_prompt_seq_len:]
+            #     raise ValueError("Prompt length is too long")
 
-            out = trainer.generate_experience(prompts)
+            out = trainer.generate_experience(batch_prompt['prompt'],
+                                              batch_prompt['prompt_att_mask'])
             exp_dataset = exp_mini_dataset.add(out)
 
             if exp_dataset is not None:

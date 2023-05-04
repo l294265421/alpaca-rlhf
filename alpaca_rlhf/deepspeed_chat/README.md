@@ -206,7 +206,7 @@ bash evaluation_scripts/run_eval.sh
 
 </p></details>
 
-#### 🕒 Step 3 - [Reinforcement Learning with Human Feedback](./training/step3_rlhf_finetuning)
+#### 🕒 Step 3 - [Reinforcement Learning with Human Feedback](./training/step3_rlhf_finetuning_backup)
 
 <p align="center">
 
@@ -217,7 +217,7 @@ Figure 1: The illustration of DeepSpeed Chat’s RLHF training pipeline with opt
 
 </p>
 
-As the most complex step of the entire 3-step InstructGPT pipeline, DeepSpeed Chat's ***Hybrid Engine*** has enabled sufficient acceleration to avoid large training time (cost) implications. Refer to [Step3: Reinforcement Learning Human Feedback (RLHF)](./training/step3_rlhf_finetuning) for more information. If you already have your fine-tuned actor and reward model checkpoints, you can simply run the following scripts to enable the PPO training.
+As the most complex step of the entire 3-step InstructGPT pipeline, DeepSpeed Chat's ***Hybrid Engine*** has enabled sufficient acceleration to avoid large training time (cost) implications. Refer to [Step3: Reinforcement Learning Human Feedback (RLHF)](./training/step3_rlhf_finetuning_backup) for more information. If you already have your fine-tuned actor and reward model checkpoints, you can simply run the following scripts to enable the PPO training.
 
 <details><summary> Expand </summary><p>
 
@@ -374,7 +374,7 @@ model family | size range
 For more APIs, example scripts, and evaluation results, please refer to
   - [**Step1: Supervised Fine-Tuning (SFT)**](./training/step1_supervised_finetuning/README.md)
   - [**Step2: Reward Model Fine-Tuning**](./training/step2_reward_model_finetuning/README.md)
-  - [**Step3: Reinforcement Learning Human Feedback (RLHF)**](./training/step3_rlhf_finetuning/README.md)
+  - [**Step3: Reinforcement Learning Human Feedback (RLHF)**](training/step3_rlhf_finetuning_backup/README.md)
   - [**Training Details Explanation**](./training/README.md)
 
 ## 🌱 DeepSpeed Chat's Roadmap 🌱
