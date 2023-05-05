@@ -22,11 +22,12 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-# path = "/root/autodl-tmp/rlhf/actor"
-path = "/root/autodl-tmp/rlhf/final/actor"
+path = "/root/autodl-tmp/rlhf/actor"
+# path = "/root/autodl-tmp/rlhf/final/actor"
 # path = 'facebook/opt-1.3b'
 # path = 'facebook/opt-350m'
 tokenizer = LlamaTokenizer.from_pretrained('decapoda-research/llama-7b-hf')
+# tokenizer = LlamaTokenizer.from_pretrained(path)
 
 model = LlamaForCausalLM.from_pretrained(
     path,

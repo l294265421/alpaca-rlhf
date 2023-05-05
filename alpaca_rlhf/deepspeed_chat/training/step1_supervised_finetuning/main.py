@@ -46,7 +46,7 @@ def parse_args():
                         'form: dataset1-path dataset2-path ...')
     parser.add_argument('--data_split',
                         type=str,
-                        default='1,7,2',
+                        default='2,4,4',
                         help='Comma-separated list of proportions for training'
                         'phase 1, 2, and 3 data. For example the split `6,2,2`'
                         'will use 60% of data for phase 1, 20% for phase 2'
@@ -211,18 +211,6 @@ def main():
     tokenizer.pad_token_id = 0
     tokenizer.padding_side = "left"
 
-    model = create_hf_model(AutoModelForCausalLM,
-                            args.model_name_or_path,
-                            tokenizer,
-                            ds_config,
-                            disable_dropout=args.disable_dropout)
-
-    if args.lora_dim > 0:
-        model = convert_linear_layer_to_lora(model, args.lora_module_name,
-                                             args.lora_dim)
-        if args.only_optimize_lora:
-            model = only_optimize_lora_parameters(model)
-
     # Prepare the data
     train_phase = 1
     train_dataset, eval_dataset = create_prompt_dataset(
@@ -257,6 +245,18 @@ def main():
                                  collate_fn=data_collator,
                                  sampler=eval_sampler,
                                  batch_size=args.per_device_eval_batch_size)
+
+    model = create_hf_model(AutoModelForCausalLM,
+                            args.model_name_or_path,
+                            tokenizer,
+                            ds_config,
+                            disable_dropout=args.disable_dropout)
+
+    if args.lora_dim > 0:
+        model = convert_linear_layer_to_lora(model, args.lora_module_name,
+                                             args.lora_dim)
+        if args.only_optimize_lora:
+            model = only_optimize_lora_parameters(model)
 
     def evaluation(model, eval_dataloader):
         model.eval()
@@ -327,6 +327,7 @@ def main():
             loss = outputs.loss
             model.backward(loss)
             model.step()
+            print_rank_0(f'step: {step} loss:{loss}', args.global_rank)
 
         # Evaluate perplexity on the validation set.
         print_rank_0(

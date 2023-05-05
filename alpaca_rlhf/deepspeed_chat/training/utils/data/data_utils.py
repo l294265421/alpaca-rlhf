@@ -184,7 +184,7 @@ def create_dataset_split(current_dataset, raw_dataset, train_phase, tokenizer,
                 prompt_token['input_ids'] = chosen_token_input_ids
                 prompt_token['attention_mask'] = chosen_token_attention_mask
 
-                response_len = len(real_chosen_token["input_ids"]) - 1
+                response_len = len(real_chosen_token["input_ids"])
 
                 prompt_token["labels"] = prompt_token["input_ids"].clone()
                 prompt_token["labels"][: chosen_token_len - response_len] = -100
