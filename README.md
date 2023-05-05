@@ -15,6 +15,7 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 
 ### Articles
 - [如何正确复现 Instruct GPT / RLHF?](https://zhuanlan.zhihu.com/p/622134699)
+- [影响PPO算法性能的10个关键技巧（附PPO算法简洁Pytorch实现）](https://zhuanlan.zhihu.com/p/512327050)
 
 ### Sources
 - [Awesome RLHF](https://github.com/opendilab/awesome-RLHF)
@@ -22,6 +23,7 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 ### Tools
 - [DeepSpeed-Chat](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat)
 - [trlx](https://github.com/CarperAI/trlx)
+- [trl](https://github.com/lvwerra/)
 
 ### Datasets
 - [Stanford Human Preferences Dataset (SHP)](https://huggingface.co/datasets/stanfordnlp/SHP)
