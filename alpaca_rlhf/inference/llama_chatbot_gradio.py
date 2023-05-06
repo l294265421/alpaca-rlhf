@@ -5,11 +5,9 @@ import os
 import sys
 import random
 
-import fire
 import gradio as gr
 import torch
 import transformers
-from peft import PeftModel
 from transformers import GenerationConfig
 from transformers import LlamaForCausalLM
 from transformers import LlamaTokenizer

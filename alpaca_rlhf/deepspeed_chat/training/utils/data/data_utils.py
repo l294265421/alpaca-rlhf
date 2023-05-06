@@ -343,16 +343,16 @@ def create_prompt_dataset(local_rank,
                 sft_train_size += len(sft_train_dataset)
                 sft_eval_size += len(sft_eval_dataset)
             if sft_train_datasets:  # Check if sft_train_datasets is not empty
-                # sft_train_dataset = ConcatDataset(sft_train_datasets)
-                # train_dataset = ConcatDataset(
-                #     [train_dataset, sft_train_dataset])
-                train_dataset = ConcatDataset(sft_train_datasets)
+                sft_train_dataset = ConcatDataset(sft_train_datasets)
+                train_dataset = ConcatDataset(
+                    [train_dataset, sft_train_dataset])
+                # train_dataset = ConcatDataset(sft_train_datasets)
                 shuffle_idx = get_shuffle_idx(seed, len(train_dataset))
                 train_dataset = Subset(train_dataset, shuffle_idx.tolist())
             if sft_eval_datasets:  # Check if sft_eval_datasets is not empty
-                # sft_eval_dataset = ConcatDataset(sft_eval_datasets)
-                # eval_dataset = ConcatDataset([eval_dataset, sft_eval_dataset])
-                eval_dataset = ConcatDataset(sft_eval_datasets)
+                sft_eval_dataset = ConcatDataset(sft_eval_datasets)
+                eval_dataset = ConcatDataset([eval_dataset, sft_eval_dataset])
+                # eval_dataset = ConcatDataset(sft_eval_datasets)
                 shuffle_idx = get_shuffle_idx(seed, len(eval_dataset))
                 eval_dataset = Subset(eval_dataset, shuffle_idx.tolist())
         torch.save(train_dataset, train_fname)
