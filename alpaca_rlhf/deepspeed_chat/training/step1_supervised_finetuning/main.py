@@ -46,7 +46,7 @@ def parse_args():
                         'form: dataset1-path dataset2-path ...')
     parser.add_argument('--data_split',
                         type=str,
-                        default='2,4,4',
+                        default='4,4,2',
                         help='Comma-separated list of proportions for training'
                         'phase 1, 2, and 3 data. For example the split `6,2,2`'
                         'will use 60% of data for phase 1, 20% for phase 2'
@@ -206,9 +206,11 @@ def main():
     torch.distributed.barrier()
 
     tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,
-                                               fast_tokenizer=True)
+                                               fast_tokenizer=False)
     # tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = 0
+    tokenizer.bos_token_id = 1
+    tokenizer.eos_token_id = 2
     tokenizer.padding_side = "left"
 
     # Prepare the data
