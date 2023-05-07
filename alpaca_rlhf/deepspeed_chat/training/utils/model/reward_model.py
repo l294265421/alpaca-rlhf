@@ -99,8 +99,9 @@ class RewardModel(nn.Module):
                 chosen_reward[c_ind - 1])  #use the end score for reference
             rejected_mean_scores.append(rejected_reward[r_ind - 1])
 
-            loss += -torch.log(
-                torch.sigmoid(c_truncated_reward - r_truncated_reward)).mean()
+            # loss += -torch.log(
+            #     torch.sigmoid(c_truncated_reward - r_truncated_reward)).mean()
+            loss += -torch.log(torch.sigmoid(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1]))
 
         loss = loss / bs
         chosen_mean_scores = torch.stack(chosen_mean_scores)

@@ -17,7 +17,7 @@ from transformers import (
     SchedulerType,
     get_scheduler,
 )
-
+from transformers import LlamaTokenizer
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
 
@@ -42,7 +42,7 @@ def parse_args():
                         'form: dataset1-path dataset2-path ...')
     parser.add_argument('--data_split',
                         type=str,
-                        default='1,7,2',
+                        default='4,4,2',
                         help='Comma-separated list of proportions for training'
                         'phase 1, 2, and 3 data. For example the split `2,4,4`'
                         'will use 60% of data for phase 1, 20% for phase 2'
@@ -202,26 +202,13 @@ def main():
     set_random_seed(args.seed)
     torch.distributed.barrier()
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path,
-                                              fast_tokenizer=True)
+    tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,
+                                               fast_tokenizer=False)
     # tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.pad_token_id = (
-        0  # unk. we want this to be different from the eos token
-    )
+    tokenizer.pad_token_id = 0
+    tokenizer.bos_token_id = 1
+    tokenizer.eos_token_id = 2
     tokenizer.add_eos_token = True
-
-    rm_model = create_critic_model(args.model_name_or_path,
-                                   tokenizer,
-                                   ds_config,
-                                   args.num_padding_at_beginning,
-                                   disable_dropout=args.disable_dropout)
-
-    if args.lora_dim > 0:
-        rm_model = convert_linear_layer_to_lora(rm_model,
-                                                args.lora_module_name,
-                                                args.lora_dim)
-        if args.only_optimize_lora:
-            rm_model = only_optimize_lora_parameters(rm_model)
 
     train_phase = 2
     train_dataset, eval_dataset = create_prompt_dataset(
@@ -247,6 +234,19 @@ def main():
                                  sampler=eval_sampler,
                                  batch_size=args.per_device_eval_batch_size)
 
+    rm_model = create_critic_model(args.model_name_or_path,
+                                   tokenizer,
+                                   ds_config,
+                                   args.num_padding_at_beginning,
+                                   disable_dropout=args.disable_dropout)
+
+    if args.lora_dim > 0:
+        rm_model = convert_linear_layer_to_lora(rm_model,
+                                                args.lora_module_name,
+                                                args.lora_dim)
+        if args.only_optimize_lora:
+            rm_model = only_optimize_lora_parameters(rm_model)
+
     def evaluation_reward(model, eval_dataloader):
         model.eval()
         correct_predictions = 0
@@ -261,11 +261,11 @@ def main():
             rejected = outputs["rejected_mean_scores"]
             correct_predictions += (chosen > rejected).sum()
             total_predictions += chosen.shape[0]
-            scores += outputs["chosen_mean_scores"].mean().float()
-            if step == 99:  # For faster evaluation and debugging
-                break
+            scores += outputs["chosen_mean_scores"].sum().float()
+            # if step == 99:  # For faster evaluation and debugging
+            #     break
         acc = correct_predictions / total_predictions
-        scores = scores / (step + 1)
+        scores = scores / total_predictions
         try:
             acc = get_all_reduce_mean(acc).item()
             scores = get_all_reduce_mean(scores).item()
@@ -327,6 +327,7 @@ def main():
             rm_model.backward(loss)
             rm_model.step()
             mean_loss += loss.item()
+            print_rank_0(f'step: {step} loss:{loss}', args.global_rank)
         print_rank_0(
             f"Epoch {epoch+1}/{args.num_train_epochs} with loss {mean_loss/(step+1)}",
             args.global_rank)
