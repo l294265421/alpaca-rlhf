@@ -26,6 +26,7 @@ class RewardModel(nn.Module):
                 self.config, "hidden_size") else self.config.n_embd
             self.v_head = nn.Linear(self.config.n_embd, 1, bias=False)
         self.rwtranrsformer = base_model
+        self.tokenizer = tokenizer
         self.PAD_ID = tokenizer.pad_token_id
 
     def gradient_checkpointing_enable(self):
@@ -99,10 +100,10 @@ class RewardModel(nn.Module):
                 chosen_reward[c_ind - 1])  #use the end score for reference
             rejected_mean_scores.append(rejected_reward[r_ind - 1])
 
-            # loss += -torch.log(
-            #     torch.sigmoid(c_truncated_reward - r_truncated_reward)).mean()
-            loss += -torch.log(torch.sigmoid(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1]))
-
+            # instance_loss = -torch.log(torch.sigmoid(c_truncated_reward - r_truncated_reward)).mean()
+            instance_loss = -torch.log(torch.sigmoid(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1]))
+            # instance_loss = -(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1])
+            loss += instance_loss
         loss = loss / bs
         chosen_mean_scores = torch.stack(chosen_mean_scores)
         rejected_mean_scores = torch.stack(rejected_mean_scores)

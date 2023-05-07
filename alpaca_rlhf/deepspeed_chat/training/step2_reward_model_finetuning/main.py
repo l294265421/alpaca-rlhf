@@ -173,6 +173,16 @@ def parse_args():
 
     return args
 
+def print_args(model):
+    n_trainable_params, n_nontrainable_params = 0, 0
+    for p in model.parameters():
+        n_params = torch.prod(torch.tensor(p.shape)).item()
+        if p.requires_grad:
+            n_trainable_params += n_params
+        else:
+            n_nontrainable_params += n_params
+    print('n_trainable_params: {0}, n_nontrainable_params: {1}'.format(n_trainable_params, n_nontrainable_params))
+
 
 def main():
     args = parse_args()
@@ -228,6 +238,7 @@ def main():
                                   collate_fn=data_collator,
                                   sampler=train_sampler,
                                   batch_size=args.per_device_train_batch_size)
+
     eval_sampler = SequentialSampler(eval_dataset)
     eval_dataloader = DataLoader(eval_dataset,
                                  collate_fn=data_collator,
@@ -240,18 +251,22 @@ def main():
                                    args.num_padding_at_beginning,
                                    disable_dropout=args.disable_dropout)
 
+    print_args(rm_model)
     if args.lora_dim > 0:
         rm_model = convert_linear_layer_to_lora(rm_model,
                                                 args.lora_module_name,
                                                 args.lora_dim)
         if args.only_optimize_lora:
             rm_model = only_optimize_lora_parameters(rm_model)
+    print_args(rm_model)
+
 
     def evaluation_reward(model, eval_dataloader):
         model.eval()
         correct_predictions = 0
         total_predictions = 0
         scores = 0
+        rejected_scores = 0
         for step, batch in enumerate(eval_dataloader):
             batch = to_device(batch, device)
             with torch.no_grad():
@@ -262,16 +277,19 @@ def main():
             correct_predictions += (chosen > rejected).sum()
             total_predictions += chosen.shape[0]
             scores += outputs["chosen_mean_scores"].sum().float()
+            rejected_scores += outputs["rejected_mean_scores"].sum().float()
             # if step == 99:  # For faster evaluation and debugging
             #     break
         acc = correct_predictions / total_predictions
         scores = scores / total_predictions
+        rejected_scores = rejected_scores / total_predictions
         try:
             acc = get_all_reduce_mean(acc).item()
             scores = get_all_reduce_mean(scores).item()
+            rejected_scores = get_all_reduce_mean(rejected_scores).item()
         except:
             pass
-        return scores, acc
+        return scores, rejected_scores, acc
 
     # Split weights in two groups, one with weight decay and the other not.
     optimizer_grouped_parameters = get_optimizer_grouped_parameters(
@@ -309,9 +327,11 @@ def main():
     print_rank_0(
         f"***** Evaluating reward, Epoch {0}/{args.num_train_epochs} *****",
         args.global_rank)
-    reward_score, acc = evaluation_reward(rm_model, eval_dataloader)
+    reward_score, rejected_scores, acc = evaluation_reward(rm_model, eval_dataloader)
     print_rank_0(
-        f"chosen_last_scores (higher is better) : {reward_score}, acc (higher is better) : {acc}",
+        f"chosen_last_scores (higher is better) : {reward_score}, "
+        f"reject_last_scores (higher is better) : {rejected_scores},  "
+        f"acc (higher is better) : {acc}",
         args.global_rank)
 
     for epoch in range(args.num_train_epochs):
@@ -327,7 +347,13 @@ def main():
             rm_model.backward(loss)
             rm_model.step()
             mean_loss += loss.item()
-            print_rank_0(f'step: {step} loss:{loss}', args.global_rank)
+            chosen = outputs["chosen_mean_scores"]
+            rejected = outputs["rejected_mean_scores"]
+            print_rank_0(f'step: {step} loss:{loss}, '
+                         f'correct_predictions: {(chosen > rejected).sum() * 1.0 / chosen.shape[0]}, '
+                         f'reward: {outputs["chosen_mean_scores"].mean().float()} '
+                         f'r_reward: {outputs["rejected_mean_scores"].mean().float()} ',
+                         args.global_rank)
         print_rank_0(
             f"Epoch {epoch+1}/{args.num_train_epochs} with loss {mean_loss/(step+1)}",
             args.global_rank)
@@ -335,10 +361,13 @@ def main():
         print_rank_0(
             f"***** Evaluating reward, Epoch {epoch+1}/{args.num_train_epochs} *****",
             args.global_rank)
-        reward_score, acc = evaluation_reward(rm_model, eval_dataloader)
+        reward_score, rejected_scores, acc = evaluation_reward(rm_model, eval_dataloader)
         print_rank_0(
-            f"chosen_last_scores (higher is better) : {reward_score}, acc (higher is better) : {acc}",
+            f"chosen_last_scores (higher is better) : {reward_score}, "
+            f"reject_last_scores (higher is better) : {rejected_scores},  "
+            f"acc (higher is better) : {acc}",
             args.global_rank)
+        # chosen_last_scores (higher is better) : -0.37704116106033325, reject_last_scores (higher is better) : -0.41206246614456177,  acc (higher is better) : 0.564919114112854
         rm_model.tput_timer.update_epoch_count()
 
     if args.output_dir is not None:
