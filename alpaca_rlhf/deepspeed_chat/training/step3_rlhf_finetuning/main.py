@@ -27,7 +27,7 @@ from transformers import (
     SchedulerType,
     default_data_collator,
 )
-
+from transformers import LlamaTokenizer
 import deepspeed
 
 from ppo_trainer import DeepSpeedPPOTrainer, DeepSpeedPPOTrainerUnsupervised
@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument(
         '--data_split',
         type=str,
-        default='2,4,4',
+        default='4,4,2',
         help=
         'Comma-separated list of proportions for training phase 1, 2, and 3 data. For example the split `2,4,4` '
         'will use 60% of data for phase 1, 20% for phase 2 and 20% for phase 3.'
@@ -86,6 +86,12 @@ def parse_args():
                         help='''gamma in Equation 2 from InstructGPT paper''')
     parser.add_argument(
         "--actor_model_name_or_path",
+        type=str,
+        help=
+        "Path to pretrained model or model identifier from huggingface.co/models.",
+        required=True)
+    parser.add_argument(
+        "--tokenizer_name_or_path",
         type=str,
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
@@ -379,12 +385,12 @@ def main():
     torch.distributed.barrier()
 
     # create common tokenizer based on actor model
-    tokenizer = load_hf_tokenizer(args.actor_model_name_or_path,
-                                  fast_tokenizer=True)
+    tokenizer = LlamaTokenizer.from_pretrained(args.tokenizer_name_or_path,
+                                               fast_tokenizer=False)
     # tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.pad_token_id = (
-        0  # unk. we want this to be different from the eos token
-    )
+    tokenizer.pad_token_id = 0
+    tokenizer.bos_token_id = 1
+    tokenizer.eos_token_id = 2
 
     prompt_train_dataloader, unsupervised_train_dataloader, num_total_iters = create_datasets(
         args=args, tokenizer=tokenizer, train_phase=3)
@@ -397,7 +403,8 @@ def main():
         num_total_iters=num_total_iters,
         args=args)
 
-    args.end_of_conversation_token = "<|endoftext|>"
+    # args.end_of_conversation_token = "<|endoftext|>"
+    args.end_of_conversation_token = ""
 
     ppo_trainer = DeepSpeedPPOTrainerUnsupervised if unsupervised_training_enabled else DeepSpeedPPOTrainer
     trainer = ppo_trainer(rlhf_engine, args)

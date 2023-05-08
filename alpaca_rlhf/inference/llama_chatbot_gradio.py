@@ -20,12 +20,12 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-path = "/root/autodl-tmp/rlhf/actor"
-# path = "/root/autodl-tmp/rlhf/final/actor"
+# path = "/root/autodl-tmp/rlhf/actor"
+path = "/root/autodl-tmp/rlhf/final/actor"
 # path = 'facebook/opt-1.3b'
 # path = 'facebook/opt-350m'
-tokenizer = LlamaTokenizer.from_pretrained('decapoda-research/llama-7b-hf')
-# tokenizer = LlamaTokenizer.from_pretrained(path)
+# tokenizer = LlamaTokenizer.from_pretrained('decapoda-research/llama-7b-hf')
+tokenizer = LlamaTokenizer.from_pretrained(path)
 
 model = LlamaForCausalLM.from_pretrained(
     path,
@@ -115,7 +115,7 @@ def predict(input, chatbot, max_new_tokens, num_beams, do_sample, temperature, t
             return_dict_in_generate=True,
             output_scores=True,
         )
-    s = generation_output.sequences[0]
+    s = generation_output.sequences[0][1: -2]
     output = tokenizer.decode(s)
     print('output: %s' % output)
     response = output[len(prompt):]

@@ -88,6 +88,10 @@ class DeepSpeedPPOTrainer():
                     i] <= 1:  # if the answer is shorter than 1 token, drop it
                 continue
             else:
+                eos_inds = (seq[i][prompt_length:] == self.tokenizer.eos_token_id).nonzero()
+                eos_ind = eos_inds[0].item() + prompt_length if len(eos_inds) > 0 else max_min_length
+                seq[i][eos_ind + 1:] = self.tokenizer.pad_token_id
+
                 out_seq.append(seq[i:i + 1])
         out_seq = torch.cat(out_seq, dim=0)  # concate output in the batch dim
 
@@ -119,8 +123,8 @@ class DeepSpeedPPOTrainer():
             'logprobs': gather_log_probs(logits[:, :-1, :], seq[:, 1:]),
             'ref_logprobs': gather_log_probs(logits_ref[:, :-1, :], seq[:,
                                                                         1:]),
-            'value': values,
-            'rewards': reward_score,
+            'value': values - (-0.377),
+            'rewards': reward_score - (-0.377),
             'input_ids': seq,
             "attention_mask": attention_mask
         }
