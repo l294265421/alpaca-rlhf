@@ -123,8 +123,10 @@ class DeepSpeedPPOTrainer():
             'logprobs': gather_log_probs(logits[:, :-1, :], seq[:, 1:]),
             'ref_logprobs': gather_log_probs(logits_ref[:, :-1, :], seq[:,
                                                                         1:]),
-            'value': values - (-0.377),
-            'rewards': reward_score - (-0.377),
+            # 'value': values - (-0.377),
+            # 'rewards': reward_score - (-0.377),
+            'value': values,
+            'rewards': reward_score,
             'input_ids': seq,
             "attention_mask": attention_mask
         }
