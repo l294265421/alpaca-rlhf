@@ -1,10 +1,6 @@
 # alpaca-rlhf
 Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The base model is from [my-alpaca](https://github.com/l294265421/my-alpaca) and [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca), which train LLaMA with the original alpaca dataset and a multi-turn dialogue dataset respectively.
 
-## Tips
-- DeepSpeed-Chat implements PPO following [2017-Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347) except for the entropy bonus.
-
-
 ## Stey by Step
 - Running all three steps on 2 x A100 80G
 - [Bootstrap Script](alpaca_rlhf/my_deepspeed.py)
