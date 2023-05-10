@@ -7,6 +7,8 @@ import argparse
 import os
 import math
 import sys
+import socket
+from pathlib import Path
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
@@ -20,6 +22,7 @@ from transformers import (
 from transformers import LlamaTokenizer
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
+import wandb
 
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
@@ -187,6 +190,21 @@ def print_args(model):
 def main():
     args = parse_args()
 
+    wandb.login(key="6c52cf61837ddd8efa62755b86139c41bbad09ec")
+    project_name = 'rlhf'
+    experiment_name = 'rlhf-step2'
+    run_dir = os.path.join(args.data_output_path, 'log', project_name, experiment_name)
+    if not run_dir.exists():
+        os.makedirs(str(run_dir))
+    wandb.init(config=args,
+               project=project_name,
+               entity='knowl',
+               notes=socket.gethostname(),
+               name=experiment_name,
+               dir=run_dir,
+               job_type="training",
+               reinit=True)
+
     if args.local_rank == -1:
         device = torch.device("cuda")
     else:
@@ -207,6 +225,7 @@ def main():
     ds_config[
         'train_batch_size'] = args.per_device_train_batch_size * torch.distributed.get_world_size(
         ) * args.gradient_accumulation_steps
+    # ds_config['wandb'] = {"enabled": True, "group": "finetune777", "team": "finetune777", "project": "deepspeed-chat-2"}
 
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
@@ -354,6 +373,16 @@ def main():
                          f'reward: {outputs["chosen_mean_scores"].mean().float()} '
                          f'r_reward: {outputs["rejected_mean_scores"].mean().float()} ',
                          args.global_rank)
+
+            if args.global_rank == 0:
+                wandb.log({
+                    'Train/epoch': epoch,
+                    'Train/step': step,
+                    'Train/loss': loss,
+                    'Train/reward': outputs["chosen_mean_scores"].mean().float(),
+                    'Train/r_reward': outputs["rejected_mean_scores"].mean().float(),
+                })
+
         print_rank_0(
             f"Epoch {epoch+1}/{args.num_train_epochs} with loss {mean_loss/(step+1)}",
             args.global_rank)
@@ -369,7 +398,7 @@ def main():
             args.global_rank)
         # chosen_last_scores (higher is better) : -0.37704116106033325, reject_last_scores (higher is better) : -0.41206246614456177,  acc (higher is better) : 0.564919114112854
         rm_model.tput_timer.update_epoch_count()
-
+    wandb.finish()
     if args.output_dir is not None:
         print_rank_0('saving model ...', args.global_rank)
         rm_model = convert_lora_to_linear_layer(rm_model)
