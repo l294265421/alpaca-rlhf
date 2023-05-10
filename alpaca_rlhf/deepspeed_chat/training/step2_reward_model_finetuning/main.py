@@ -8,7 +8,7 @@ import os
 import math
 import sys
 import socket
-from pathlib import Path
+import time
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
@@ -28,10 +28,10 @@ sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from alpaca_rlhf.deepspeed_chat.training.utils.model.model_utils import create_critic_model
 from alpaca_rlhf.deepspeed_chat.training.utils.data.data_utils import create_prompt_dataset, DataCollatorReward
-from alpaca_rlhf.deepspeed_chat.training.utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, get_optimizer_grouped_parameters, save_zero_three_model
+from alpaca_rlhf.deepspeed_chat.training.utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, get_optimizer_grouped_parameters, save_zero_three_model, load_hf_tokenizer
 from alpaca_rlhf.deepspeed_chat.training.utils.ds_utils import get_train_ds_config
 from alpaca_rlhf.deepspeed_chat.training.utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters
-
+from alpaca_rlhf.deepspeed_chat.training.utils import datetime_utils
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -194,16 +194,17 @@ def main():
     project_name = 'rlhf'
     experiment_name = 'rlhf-step2'
     run_dir = os.path.join(args.data_output_path, 'log', project_name, experiment_name)
-    if not run_dir.exists():
+    if not os.path.exists(run_dir):
         os.makedirs(str(run_dir))
     wandb.init(config=args,
-               project=project_name,
                entity='knowl',
-               notes=socket.gethostname(),
-               name=experiment_name,
+               project=project_name,
+               name=experiment_name + '_' + datetime_utils.now(),
                dir=run_dir,
                job_type="training",
-               reinit=True)
+               reinit=True,
+               notes=socket.gethostname(),
+               )
 
     if args.local_rank == -1:
         device = torch.device("cuda")
@@ -231,8 +232,9 @@ def main():
     set_random_seed(args.seed)
     torch.distributed.barrier()
 
-    tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,
-                                               fast_tokenizer=False)
+    # tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,
+    #                                            fast_tokenizer=False)
+    tokenizer = load_hf_tokenizer(args.model_name_or_path, fast_tokenizer=False)
     # tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = 0
     tokenizer.bos_token_id = 1
@@ -368,10 +370,14 @@ def main():
             mean_loss += loss.item()
             chosen = outputs["chosen_mean_scores"]
             rejected = outputs["rejected_mean_scores"]
+
+            correct_predictions = (chosen > rejected).sum() * 1.0 / chosen.shape[0]
+            reward = outputs["chosen_mean_scores"].mean().float()
+            r_reward = outputs["rejected_mean_scores"].mean().float()
             print_rank_0(f'step: {step} loss:{loss}, '
-                         f'correct_predictions: {(chosen > rejected).sum() * 1.0 / chosen.shape[0]}, '
-                         f'reward: {outputs["chosen_mean_scores"].mean().float()} '
-                         f'r_reward: {outputs["rejected_mean_scores"].mean().float()} ',
+                         f'correct_predictions: {correct_predictions}, '
+                         f'reward: {reward} '
+                         f'r_reward: {r_reward} ',
                          args.global_rank)
 
             if args.global_rank == 0:
@@ -379,8 +385,10 @@ def main():
                     'Train/epoch': epoch,
                     'Train/step': step,
                     'Train/loss': loss,
-                    'Train/reward': outputs["chosen_mean_scores"].mean().float(),
-                    'Train/r_reward': outputs["rejected_mean_scores"].mean().float(),
+                    'Train/reward': reward,
+                    'Train/r_reward': r_reward,
+                    'Train/lr': lr_scheduler.get_lr(),
+                    'Train/reward_diff': reward - r_reward
                 })
 
         print_rank_0(

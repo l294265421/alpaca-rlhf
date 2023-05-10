@@ -133,6 +133,15 @@ class DeepSpeedPPOTrainer():
 
     def compute_rewards(self, prompts, log_probs, ref_log_probs, reward_score,
                         action_mask):
+        """
+        reward - kl
+        :param prompts:
+        :param log_probs:
+        :param ref_log_probs:
+        :param reward_score:
+        :param action_mask:
+        :return:
+        """
 
         kl_divergence_estimate = -self.kl_ctl * (log_probs - ref_log_probs)
         rewards = kl_divergence_estimate
@@ -213,6 +222,7 @@ class DeepSpeedPPOTrainer():
 
     def get_advantages_and_returns(self, values, rewards, start):
         # Adopted from https://github.com/CarperAI/trlx/blob/main/trlx/models/modeling_ppo.py#L134
+        # todo: bug, should omit the padding at the end
         lastgaelam = 0
         advantages_reversed = []
         length = rewards.size()[-1]

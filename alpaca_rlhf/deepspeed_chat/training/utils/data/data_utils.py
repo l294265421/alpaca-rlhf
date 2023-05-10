@@ -376,13 +376,15 @@ class DataCollatorReward:
 
 class DataCollatorRLHF:
 
-    def __init__(self, max_token_len, inference_tp_size):
+    def __init__(self, max_token_len, inference_tp_size, pad_token_id):
         self.max_token_len = max_token_len
         self.inference_tp_size = inference_tp_size
+        self.pad_token_id = pad_token_id
 
     def __call__(self, data):
         batch = {}
-        pad_token_id = data[-1][-1]
+        # pad_token_id = data[-1][-1]  # todo: bug, should use the real pad token id
+        pad_token_id = self.pad_token_id
 
         prompt = pad_sequence([f[0] for f in data],
                               padding_value=pad_token_id,

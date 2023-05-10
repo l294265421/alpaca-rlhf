@@ -101,7 +101,9 @@ class RewardModel(nn.Module):
             rejected_mean_scores.append(rejected_reward[r_ind - 1])
 
             # instance_loss = -torch.log(torch.sigmoid(c_truncated_reward - r_truncated_reward)).mean()
-            instance_loss = -torch.log(torch.sigmoid(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1]))
+            # instance_loss = -torch.log(torch.sigmoid(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1]))
+            # Fixing the numerical instability
+            instance_loss = -torch.nn.functional.logsigmoid(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1])
             # instance_loss = -(chosen_reward[c_ind - 1] - rejected_reward[r_ind - 1])
             loss += instance_loss
         loss = loss / bs

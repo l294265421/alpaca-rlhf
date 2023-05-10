@@ -324,7 +324,8 @@ def create_datasets(args, tokenizer, train_phase=3):
 
     # DataLoaders creation:
     data_collator = DataCollatorRLHF(args.max_prompt_seq_len,
-                                     args.inference_tp_size)
+                                     args.inference_tp_size,
+                                     tokenizer.pad_token_id)
     if args.local_rank == -1:
         prompt_train_sampler = RandomSampler(prompt_train_dataset)
         if unsupervised_training_enabled:
