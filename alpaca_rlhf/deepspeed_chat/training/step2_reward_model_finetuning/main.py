@@ -10,6 +10,7 @@ import sys
 import socket
 import time
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torch.utils.data.distributed import DistributedSampler
@@ -232,15 +233,16 @@ def main():
     set_random_seed(args.seed)
     torch.distributed.barrier()
 
-    # tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,
-    #                                            fast_tokenizer=False)
-    tokenizer = load_hf_tokenizer(args.model_name_or_path, fast_tokenizer=False)
-    # tokenizer.pad_token = tokenizer.eos_token
+        # tokenizer.pad_token = tokenizer.eos_token
     if 'llama' in args.model_name_or_path.lower():
+        tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,
+                                                   fast_tokenizer=False)
         tokenizer.pad_token_id = 0
         tokenizer.bos_token_id = 1
         tokenizer.eos_token_id = 2
         tokenizer.add_eos_token = True
+    else:
+        tokenizer = load_hf_tokenizer(args.model_name_or_path, fast_tokenizer=False)
 
     train_phase = 2
     train_dataset, eval_dataset = create_prompt_dataset(
@@ -287,7 +289,7 @@ def main():
         model.eval()
         correct_predictions = 0
         total_predictions = 0
-        scores = 0
+        scores = None
         rejected_scores = 0
         for step, batch in enumerate(eval_dataloader):
             batch = to_device(batch, device)
@@ -298,20 +300,26 @@ def main():
             rejected = outputs["rejected_mean_scores"]
             correct_predictions += (chosen > rejected).sum()
             total_predictions += chosen.shape[0]
-            scores += outputs["chosen_mean_scores"].sum().float()
-            rejected_scores += outputs["rejected_mean_scores"].sum().float()
-            # if step == 99:  # For faster evaluation and debugging
-            #     break
+            if scores is None:
+                scores = outputs["chosen_mean_scores"]
+                rejected_scores = outputs["rejected_mean_scores"]
+            else:
+                scores = torch.concat([scores, outputs["chosen_mean_scores"]])
+                rejected_scores = torch.concat([rejected_scores, outputs["rejected_mean_scores"]])
+
+        total_predictions = scores.shape[0]
+        scores_ave = scores.sum().float() / total_predictions
+        rejected_scores_ave = rejected_scores.sum().float() / total_predictions
         acc = correct_predictions / total_predictions
-        scores = scores / total_predictions
-        rejected_scores = rejected_scores / total_predictions
+        score_std = np.std(scores.cpu().detach().numpy())
         try:
             acc = get_all_reduce_mean(acc).item()
-            scores = get_all_reduce_mean(scores).item()
-            rejected_scores = get_all_reduce_mean(rejected_scores).item()
+            scores_ave = get_all_reduce_mean(scores_ave).item()
+            score_std = get_all_reduce_mean(score_std).item()
+            rejected_scores_ave = get_all_reduce_mean(rejected_scores_ave).item()
         except:
             pass
-        return scores, rejected_scores, acc
+        return scores_ave, rejected_scores_ave, acc, score_std
 
     # Split weights in two groups, one with weight decay and the other not.
     optimizer_grouped_parameters = get_optimizer_grouped_parameters(
@@ -349,17 +357,19 @@ def main():
     print_rank_0(
         f"***** Evaluating reward, Epoch {0}/{args.num_train_epochs} *****",
         args.global_rank)
-    reward_score, rejected_scores, acc = evaluation_reward(rm_model, eval_dataloader)
+    reward_score, rejected_scores, acc, score_std = evaluation_reward(rm_model, eval_dataloader)
     print_rank_0(
         f"chosen_last_scores (higher is better) : {reward_score}, "
-        f"reject_last_scores (higher is better) : {rejected_scores},  "
+        f"score_std : {score_std},  "
+        f"reject_last_scores (lower is better) : {rejected_scores},  "
         f"acc (higher is better) : {acc}",
         args.global_rank)
     if args.global_rank == 0:
         wandb.log({
             'Eval/epoch': -1,
-            'Eval/acc': reward_score,
-            'Eval/acc': rejected_scores,
+            'Eval/reward_score': reward_score,
+            'Eval/score_std': score_std,
+            'Eval/rejected_scores': rejected_scores,
             'Eval/acc': acc,
         })
 
@@ -395,8 +405,18 @@ def main():
                     'Train/loss': loss,
                     'Train/reward': reward,
                     'Train/r_reward': r_reward,
-                    'Train/lr': lr_scheduler.get_lr(),
+                    'Train/lr_0': lr_scheduler.get_lr()[0],
                     'Train/reward_diff': reward - r_reward
+                })
+
+            if args.global_rank == 0 and (step + 1) % 100 == 0:
+                reward_score, rejected_scores, acc, score_std = evaluation_reward(rm_model, eval_dataloader)
+                wandb.log({
+                    'Eval/epoch': -1,
+                    'Eval/reward_score': reward_score,
+                    'Eval/score_std': score_std,
+                    'Eval/rejected_scores': rejected_scores,
+                    'Eval/acc': acc,
                 })
 
         print_rank_0(
@@ -406,10 +426,11 @@ def main():
         print_rank_0(
             f"***** Evaluating reward, Epoch {epoch+1}/{args.num_train_epochs} *****",
             args.global_rank)
-        reward_score, rejected_scores, acc = evaluation_reward(rm_model, eval_dataloader)
+        reward_score, rejected_scores, acc, score_std = evaluation_reward(rm_model, eval_dataloader)
         print_rank_0(
             f"chosen_last_scores (higher is better) : {reward_score}, "
-            f"reject_last_scores (higher is better) : {rejected_scores},  "
+            f"score_std : {score_std},  "
+            f"reject_last_scores (lower is better) : {rejected_scores},  "
             f"acc (higher is better) : {acc}",
             args.global_rank)
         # chosen_last_scores (higher is better) : -0.37704116106033325, reject_last_scores (higher is better) : -0.41206246614456177,  acc (higher is better) : 0.564919114112854
@@ -417,9 +438,10 @@ def main():
 
         if args.global_rank == 0:
             wandb.log({
-                'Eval/epoch': epoch,
-                'Eval/acc': reward_score,
-                'Eval/acc': rejected_scores,
+                'Eval/epoch': -1,
+                'Eval/reward_score': reward_score,
+                'Eval/score_std': score_std,
+                'Eval/rejected_scores': rejected_scores,
                 'Eval/acc': acc,
             })
     wandb.finish()
