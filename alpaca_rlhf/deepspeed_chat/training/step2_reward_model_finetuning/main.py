@@ -236,10 +236,11 @@ def main():
     #                                            fast_tokenizer=False)
     tokenizer = load_hf_tokenizer(args.model_name_or_path, fast_tokenizer=False)
     # tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.pad_token_id = 0
-    tokenizer.bos_token_id = 1
-    tokenizer.eos_token_id = 2
-    tokenizer.add_eos_token = True
+    if 'llama' in args.model_name_or_path.lower():
+        tokenizer.pad_token_id = 0
+        tokenizer.bos_token_id = 1
+        tokenizer.eos_token_id = 2
+        tokenizer.add_eos_token = True
 
     train_phase = 2
     train_dataset, eval_dataset = create_prompt_dataset(
@@ -354,6 +355,13 @@ def main():
         f"reject_last_scores (higher is better) : {rejected_scores},  "
         f"acc (higher is better) : {acc}",
         args.global_rank)
+    if args.global_rank == 0:
+        wandb.log({
+            'Eval/epoch': -1,
+            'Eval/acc': reward_score,
+            'Eval/acc': rejected_scores,
+            'Eval/acc': acc,
+        })
 
     for epoch in range(args.num_train_epochs):
         print_rank_0(
@@ -406,6 +414,14 @@ def main():
             args.global_rank)
         # chosen_last_scores (higher is better) : -0.37704116106033325, reject_last_scores (higher is better) : -0.41206246614456177,  acc (higher is better) : 0.564919114112854
         rm_model.tput_timer.update_epoch_count()
+
+        if args.global_rank == 0:
+            wandb.log({
+                'Eval/epoch': epoch,
+                'Eval/acc': reward_score,
+                'Eval/acc': rejected_scores,
+                'Eval/acc': acc,
+            })
     wandb.finish()
     if args.output_dir is not None:
         print_rank_0('saving model ...', args.global_rank)

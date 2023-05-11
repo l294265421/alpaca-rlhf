@@ -24,12 +24,13 @@ def parse_args():
         type=str,
         help=
         "Path to pretrained model or model identifier from huggingface.co/models.",
-        required=True,
+        # required=True,
+        default='/root/autodl-tmp/rlhf/critic'
     )
     parser.add_argument(
         "--num_padding_at_beginning",
         type=int,
-        default=1,
+        default=0,
         help=
         "OPT model has a fixed number (1) of padding tokens at the beginning of the input. "
         "We did not see this in other models but keep it as an option for now.",
