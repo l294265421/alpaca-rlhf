@@ -10,6 +10,8 @@ import torch
 from transformers import AutoTokenizer
 import sys
 
+from transformers import LlamaTokenizer
+
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from alpaca_rlhf.deepspeed_chat.training.utils.model.model_utils import create_critic_model
@@ -41,9 +43,15 @@ def parse_args():
 
 def load_stuff(model_name_or_path, num_padding_at_beginning):
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
-                                              fast_tokenizer=True)
-    tokenizer.pad_token = tokenizer.eos_token
+    # tokenizer = AutoTokenizer.from_pretrained(model_name_or_path,
+    #                                           fast_tokenizer=True)
+    # tokenizer.pad_token = tokenizer.eos_token
+    tokenizer = LlamaTokenizer.from_pretrained(model_name_or_path,
+                                               fast_tokenizer=False)
+    tokenizer.pad_token_id = 0
+    tokenizer.bos_token_id = 1
+    tokenizer.eos_token_id = 2
+    tokenizer.add_eos_token = True
     model = create_critic_model(model_name_or_path, tokenizer, None,
                                 num_padding_at_beginning, True)
 
