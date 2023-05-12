@@ -486,6 +486,38 @@ def main():
             if args.actor_gradient_checkpointing:
                 rlhf_engine.actor.gradient_checkpointing_disable()
 
+            if args.output_dir is not None and (step + 1) % 500 == 0:
+                print_rank_0('saving model ...')
+                rlhf_engine.actor = convert_lora_to_linear_layer(rlhf_engine.actor)
+                rlhf_engine.critic = convert_lora_to_linear_layer(rlhf_engine.critic)
+                if args.enable_ema:
+                    rlhf_engine.actor_ema = convert_lora_to_linear_layer(
+                        rlhf_engine.actor_ema)
+
+                if torch.distributed.get_rank() == 0:
+                    save_hf_format(rlhf_engine.actor,
+                                   tokenizer,
+                                   args,
+                                   sub_folder='actor')
+                    if args.enable_ema:
+                        save_hf_format(rlhf_engine.actor_ema,
+                                       tokenizer,
+                                       args,
+                                       sub_folder='actor_ema')
+
+                if args.actor_zero_stage == 3:
+                    save_zero_three_model(rlhf_engine.actor,
+                                          global_rank=args.global_rank,
+                                          save_dir=os.path.join(
+                                              args.output_dir, 'actor'),
+                                          zero_stage=args.actor_zero_stage)
+                    if args.enable_ema:
+                        save_zero_three_model(rlhf_engine.actor_ema,
+                                              global_rank=args.global_rank,
+                                              save_dir=os.path.join(
+                                                  args.output_dir, 'actor_ema'),
+                                              zero_stage=args.actor_zero_stage)
+
     if args.output_dir is not None:
         print_rank_0('saving model ...')
         rlhf_engine.actor = convert_lora_to_linear_layer(rlhf_engine.actor)
