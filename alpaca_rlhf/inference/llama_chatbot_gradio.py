@@ -4,6 +4,7 @@ nohup python chatbot_gradio.py > chatbot_gradio.log 2>&1 &
 import os
 import sys
 import random
+import argparse
 
 import gradio as gr
 import torch
@@ -20,10 +21,13 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-path = "/root/autodl-tmp/rlhf/actor"
-# path = "/root/autodl-tmp/rlhf/final/actor"
-# path = 'facebook/opt-1.3b'
-# path = 'facebook/opt-350m'
+parser = argparse.ArgumentParser()
+parser.add_argument('--path', type=str, default='/root/autodl-tmp/rlhf/final/actor',
+                    choices=['/root/autodl-tmp/rlhf/final/actor',
+                             '/root/autodl-tmp/rlhf/actor'])
+args = parser.parse_args()
+
+path = args.path
 # tokenizer = LlamaTokenizer.from_pretrained('decapoda-research/llama-7b-hf')
 tokenizer = LlamaTokenizer.from_pretrained(path)
 

@@ -19,6 +19,8 @@ for prompt_batch in prompt_train_dataloader:
 import argparse
 import os
 import random
+import socket
+
 import torch
 from torch.utils.data import DataLoader, RandomSampler
 from torch.utils.data.distributed import DistributedSampler
@@ -29,6 +31,7 @@ from transformers import (
 )
 from transformers import LlamaTokenizer
 import deepspeed
+import wandb
 
 from ppo_trainer import DeepSpeedPPOTrainer, DeepSpeedPPOTrainerUnsupervised
 from rlhf_engine import DeepSpeedRLHFEngine
@@ -40,6 +43,7 @@ sys.path.append(
 from alpaca_rlhf.deepspeed_chat.training.utils.data.data_utils import create_prompt_dataset, MiniDataset, DataCollatorRLHF, get_unsupervised_data
 from alpaca_rlhf.deepspeed_chat.training.utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, moving_average, save_zero_three_model, load_hf_tokenizer
 from alpaca_rlhf.deepspeed_chat.training.utils.module.lora import convert_lora_to_linear_layer
+from alpaca_rlhf.deepspeed_chat.training.utils import datetime_utils
 
 
 def parse_args():
@@ -362,6 +366,22 @@ def create_datasets(args, tokenizer, train_phase=3):
 def main():
     args = parse_args()
 
+    wandb.login(key="6c52cf61837ddd8efa62755b86139c41bbad09ec")
+    project_name = 'rlhf'
+    experiment_name = 'rlhf-step3'
+    run_dir = os.path.join(args.data_output_path, 'log', project_name, experiment_name)
+    if not os.path.exists(run_dir):
+        os.makedirs(str(run_dir))
+    wandb.init(config=args,
+               entity='knowl',
+               project=project_name,
+               name=experiment_name + '_' + datetime_utils.now(),
+               dir=run_dir,
+               job_type="training",
+               reinit=True,
+               notes=socket.gethostname(),
+               )
+
     if args.local_rank == -1:
         device = torch.device("cuda")
     else:
@@ -390,8 +410,8 @@ def main():
                                                fast_tokenizer=False)
     # tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = 0
-    tokenizer.bos_token_id = 1
-    tokenizer.eos_token_id = 2
+    # tokenizer.bos_token_id = 1
+    # tokenizer.eos_token_id = 2
 
     prompt_train_dataloader, unsupervised_train_dataloader, num_total_iters = create_datasets(
         args=args, tokenizer=tokenizer, train_phase=3)
@@ -482,42 +502,20 @@ def main():
                 print_rank_0(
                     "-------------------------------------------------------------------------------------",
                     args.global_rank)
+                if args.global_rank == 0:
+                    wandb.log({
+                        'Train/step': step + 1,
+                        'Train/act_loss': actor_loss_sum/inner_iter,
+                        'Train/cri_loss': critic_loss_sum/inner_iter,
+                        'Train/average_reward': average_reward/inner_iter,
+                        'Train/actor_0': rlhf_engine.actor.lr_scheduler.get_lr()[0],
+                        'Train/critic_0': rlhf_engine.critic.lr_scheduler.get_lr()[0],
+                    })
 
             if args.actor_gradient_checkpointing:
                 rlhf_engine.actor.gradient_checkpointing_disable()
 
-            if args.output_dir is not None and (step + 1) % 500 == 0:
-                print_rank_0('saving model ...')
-                rlhf_engine.actor = convert_lora_to_linear_layer(rlhf_engine.actor)
-                rlhf_engine.critic = convert_lora_to_linear_layer(rlhf_engine.critic)
-                if args.enable_ema:
-                    rlhf_engine.actor_ema = convert_lora_to_linear_layer(
-                        rlhf_engine.actor_ema)
-
-                if torch.distributed.get_rank() == 0:
-                    save_hf_format(rlhf_engine.actor,
-                                   tokenizer,
-                                   args,
-                                   sub_folder='actor')
-                    if args.enable_ema:
-                        save_hf_format(rlhf_engine.actor_ema,
-                                       tokenizer,
-                                       args,
-                                       sub_folder='actor_ema')
-
-                if args.actor_zero_stage == 3:
-                    save_zero_three_model(rlhf_engine.actor,
-                                          global_rank=args.global_rank,
-                                          save_dir=os.path.join(
-                                              args.output_dir, 'actor'),
-                                          zero_stage=args.actor_zero_stage)
-                    if args.enable_ema:
-                        save_zero_three_model(rlhf_engine.actor_ema,
-                                              global_rank=args.global_rank,
-                                              save_dir=os.path.join(
-                                                  args.output_dir, 'actor_ema'),
-                                              zero_stage=args.actor_zero_stage)
-
+    wandb.finish()
     if args.output_dir is not None:
         print_rank_0('saving model ...')
         rlhf_engine.actor = convert_lora_to_linear_layer(rlhf_engine.actor)
@@ -531,10 +529,10 @@ def main():
                            tokenizer,
                            args,
                            sub_folder='actor')
-            save_hf_format(rlhf_engine.critic,
-                           tokenizer,
-                           args,
-                           sub_folder='critic')
+            # save_hf_format(rlhf_engine.critic,
+            #                tokenizer,
+            #                args,
+            #                sub_folder='critic')
             if args.enable_ema:
                 save_hf_format(rlhf_engine.actor_ema,
                                tokenizer,
@@ -553,12 +551,12 @@ def main():
                                       save_dir=os.path.join(
                                           args.output_dir, 'actor_ema'),
                                       zero_stage=args.actor_zero_stage)
-        if args.critic_zero_stage == 3:
-            save_zero_three_model(rlhf_engine.critic,
-                                  global_rank=args.global_rank,
-                                  save_dir=os.path.join(
-                                      args.output_dir, 'critic'),
-                                  zero_stage=args.critic_zero_stage)
+        # if args.critic_zero_stage == 3:
+        #     save_zero_three_model(rlhf_engine.critic,
+        #                           global_rank=args.global_rank,
+        #                           save_dir=os.path.join(
+        #                               args.output_dir, 'critic'),
+        #                           zero_stage=args.critic_zero_stage)
 
 
 if __name__ == "__main__":

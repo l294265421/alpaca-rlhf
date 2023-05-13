@@ -8,10 +8,30 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
       - when --sft_only_data_path MultiTurnAlpaca is added, unzip data/data.zip
     - step2: --num_gpus 2 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step2_reward_model_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --model_name_or_path decapoda-research/llama-7b-hf --num_padding_at_beginning 0 --per_device_train_batch_size 4 --per_device_eval_batch_size 64 --learning_rate 5e-4 --num_train_epochs 1 --gradient_accumulation_steps 1 --num_warmup_steps 0 --zero_stage 2 --deepspeed --output_dir /root/autodl-tmp/rlhf/critic --lora_dim 8 --lora_module_name q_proj,k_proj --only_optimize_lora
       - the training process of step 2
-        - ![](./figures/eval_acc.png)
-        - ![](./figures/train_reward.png)
-        - ![](./figures/train_reward_diff.png)
-    - step3: --num_gpus 2 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --actor_model_name_or_path /root/autodl-tmp/rlhf/actor/ --tokenizer_name_or_path decapoda-research/llama-7b-hf --critic_model_name_or_path /root/autodl-tmp/rlhf/critic --actor_zero_stage 2 --critic_zero_stage 2 --num_padding_at_beginning 0 --per_device_train_batch_size 4 --per_device_mini_train_batch_size 4 --ppo_epochs 3 --gradient_accumulation_steps 16 --deepspeed --actor_lora_dim 4 --actor_lora_module_name q_proj --critic_lora_dim 4 --critic_lora_module_name q_proj,k_proj --only_optimize_lora --output_dir /root/autodl-tmp/rlhf/final
+        - ![](figures/step2/eval_acc.png)
+        - ![](figures/step2/train_reward.png)
+        - ![](figures/step2/train_reward_diff.png)
+      - The mean and standard deviation of the reward of the chosen responses are collected and used to normalize the reward in step 3. In one experiment, they are -0.8677118420600891 and 0.2210693359375 respectively and are used in the generate_experience methods: 'rewards': (reward_score - (-0.8677118420600891)) / 0.2210693359375.
+    - step3: --num_gpus 2 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --actor_model_name_or_path /root/autodl-tmp/rlhf/actor/ --tokenizer_name_or_path decapoda-research/llama-7b-hf --critic_model_name_or_path /root/autodl-tmp/rlhf/critic --actor_zero_stage 2 --critic_zero_stage 2 --num_padding_at_beginning 0 --per_device_train_batch_size 4 --per_device_mini_train_batch_size 4 --ppo_epochs 2 --actor_learning_rate 9.65e-6 --critic_learning_rate 5e-6 --gradient_accumulation_steps 1 --deepspeed --actor_lora_dim 8 --actor_lora_module_name q_proj --critic_lora_dim 8 --critic_lora_module_name q_proj,k_proj --only_optimize_lora --output_dir /root/autodl-tmp/rlhf/final
+      - the training process of step 3
+        - ![](./figures/step3/train_actor_loss.png)
+        - ![](./figures/step3/train_cri_loss.png)
+        - ![](./figures/step3/train_average_reward.png)
+- Inference
+  - nohup sh run_inference.sh 0 alpaca_rlhf/inference/llama_chatbot_gradio.py --path /root/autodl-tmp/rlhf/final/actor > rlhf_inference.log 2>&1 &
+  - nohup sh run_inference.sh 1 alpaca_rlhf/inference/llama_chatbot_gradio.py --path /root/autodl-tmp/rlhf/actor > rlhf_inference.log 2>&1 &
+
+## Comparison between SFT and RLHF
+- Chat
+  - SFT
+    - ![](figures/step3/chat_sft.png)
+  - RLHF
+    - ![](figures/step3/chat_rlhf.png)
+- Write stories
+  - SFT
+    - ![](figures/step3/story_sft.png)
+  - RLHF
+    - ![](figures/step3/story_rlhf.png)
 
 ## References
 
@@ -24,8 +44,6 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 
 ### Tools
 - [DeepSpeed-Chat](https://github.com/microsoft/DeepSpeedExamples/tree/master/applications/DeepSpeed-Chat)
-- [trlx](https://github.com/CarperAI/trlx)
-- [trl](https://github.com/lvwerra/)
 
 ### Datasets
 - [Stanford Human Preferences Dataset (SHP)](https://huggingface.co/datasets/stanfordnlp/SHP)
@@ -43,6 +61,6 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
   - [GitHub](https://github.com/LAION-AI/Open-Assistant)
   - [Paper](./papers/2023-OpenAssistant%20Conversations%20-%20Democratizing%20Large%20Language%20Model%20Alignment.pdf)
 
-### Repositories
+### Related Repositories
 - [my-alpaca](https://github.com/l294265421/my-alpaca)
 - [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca)
