@@ -31,6 +31,11 @@ path = args.path
 # tokenizer = LlamaTokenizer.from_pretrained('decapoda-research/llama-7b-hf')
 tokenizer = LlamaTokenizer.from_pretrained(path)
 
+if path == '/root/autodl-tmp/rlhf/actor':
+    model_name = 'SFT'
+else:
+    model_name = 'RLHF'
+
 model = LlamaForCausalLM.from_pretrained(
     path,
     load_in_8bit=False,
@@ -139,7 +144,7 @@ def reset_state():
 
 
 with gr.Blocks() as demo:
-    gr.HTML("""<h1 align="center">Alpaca-RLHF (主要支持英文)</h1>""")
+    gr.HTML(f"""<h1 align="center">Alpaca-{model_name} (主要支持英文)</h1>""")
     gr.HTML("""<h1 align="center"><a href="https://github.com/l294265421/alpaca-rlhf">GitHub</a></h1>""")
 
     chatbot = gr.Chatbot()

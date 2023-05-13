@@ -1,6 +1,10 @@
 # alpaca-rlhf
 Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The base model is from [my-alpaca](https://github.com/l294265421/my-alpaca) and [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca), which train LLaMA with the original alpaca dataset and a multi-turn dialogue dataset respectively.
 
+## Online Demo
+- [SFT](https://d03f7b0466275d4f9e.gradio.live/)
+- [RLHF](https://88aeeb3aef5040507e.gradio.live/)
+
 ## Stey by Step
 - Running all three steps on 2 x A100 80G
 - [Bootstrap Script](alpaca_rlhf/my_deepspeed.py)
@@ -19,7 +23,7 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
         - ![](./figures/step3/train_average_reward.png)
 - Inference
   - nohup sh run_inference.sh 0 alpaca_rlhf/inference/llama_chatbot_gradio.py --path /root/autodl-tmp/rlhf/final/actor > rlhf_inference.log 2>&1 &
-  - nohup sh run_inference.sh 1 alpaca_rlhf/inference/llama_chatbot_gradio.py --path /root/autodl-tmp/rlhf/actor > rlhf_inference.log 2>&1 &
+  - nohup sh run_inference.sh 0 alpaca_rlhf/inference/llama_chatbot_gradio.py --path /root/autodl-tmp/rlhf/actor > sft_inference.log 2>&1 &
 
 ## Comparison between SFT and RLHF
 - Chat
