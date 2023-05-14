@@ -410,8 +410,8 @@ def main():
                                                fast_tokenizer=False)
     # tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = 0
-    # tokenizer.bos_token_id = 1
-    # tokenizer.eos_token_id = 2
+    tokenizer.bos_token_id = 1
+    tokenizer.eos_token_id = 2
 
     prompt_train_dataloader, unsupervised_train_dataloader, num_total_iters = create_datasets(
         args=args, tokenizer=tokenizer, train_phase=3)

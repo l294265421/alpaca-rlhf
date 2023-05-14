@@ -5,6 +5,54 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 - [SFT](https://d03f7b0466275d4f9e.gradio.live/)
 - [RLHF](https://88aeeb3aef5040507e.gradio.live/)
 
+## Modifications on DeepSpeed Chat
+### Step 1
+- alpaca_rlhf/deepspeed_chat/training/step1_supervised_finetuning/main.py#main()
+  - Set special tokens
+    - ![](./figures/modifications/step1/special_tokens.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/data/data_utils.py#create_dataset_split()
+  - Train only on responses and add eos
+    - ![](./figures/modifications/step1/train_only_on_responses.png)
+  - Remove end_of_conversation_token
+    - ![](./figures/modifications/step1/remove_eoc.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/data/data_utils.py#PromptDataset#__getitem__
+  - Labels differs from input
+    - ![](./figures/modifications/step1/lables_differ_from_input.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/data/raw_datasets.py#MultiTurnAlpacaDataset
+  - add MultiTurnAlpacaDataset
+    - ![](./figures/modifications/step1/multi_turn_alpaca_dataset.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/module/lora.py#convert_linear_layer_to_lora
+  - Support multiple module names for lora
+    - ![](./figures/modifications/step1/multi_lora_part_names.png)
+
+### Step 2
+- alpaca_rlhf/deepspeed_chat/training/step2_reward_model_finetuning/main.py#main()
+  - Set special tokens
+    - ![](./figures/modifications/step2/special_tokens.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/model/reward_model.py#RewardModel#forward()
+  - Fixing the numerical instability
+    - ![](./figures/modifications/step2/numerical_instability.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/data/data_utils.py#create_dataset_split()
+  - Remove end_of_conversation_token
+    - ![](./figures/modifications/step2/romove_eoc.png)
+
+### Step 3
+- alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/main.py#main()
+  - Set special tokens
+    - ![](./figures/modifications/step3/special_tokens.png)
+    - ![](./figures/modifications/step3/remove_eoc.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/data/data_utils.py#create_dataset_split()
+  - Fix max length bug
+    - ![](./figures/modifications/step3/max_len_bug.png)
+- alpaca_rlhf/deepspeed_chat/training/utils/data/data_utils.py#DataCollatorRLHF#__call__
+  - Fix pad_token_id bug
+    - ![](./figures/modifications/step3/pad_token_id_bug.png)
+  - Fix padding side bug
+    - ![](./figures/modifications/step3/padding_bug.png)
+- alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/ppo_trainer.py#DeepSpeedPPOTrainer#generate_experience
+  - Normalize reward
+    - ![](./figures/modifications/step3/normalize_reward.png)
+
 ## Stey by Step
 - Running all three steps on 2 x A100 80G
 - [Bootstrap Script](alpaca_rlhf/my_deepspeed.py)
