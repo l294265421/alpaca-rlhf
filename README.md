@@ -1,5 +1,5 @@
 # alpaca-rlhf
-Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The base model is from [my-alpaca](https://github.com/l294265421/my-alpaca) and [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca), which train LLaMA with the original alpaca dataset and a multi-turn dialogue dataset respectively.
+Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback).
 
 ## Online Demo
 - [SFT](https://d03f7b0466275d4f9e.gradio.live/)
@@ -57,7 +57,7 @@ Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback). The ba
 - Running all three steps on 2 x A100 80G
 - [Bootstrap Script](alpaca_rlhf/my_deepspeed.py)
     - step1: --num_gpus 2 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step1_supervised_finetuning/main.py --sft_only_data_path MultiTurnAlpaca --data_output_path /root/autodl-tmp/rlhf/tmp/ --model_name_or_path decapoda-research/llama-7b-hf --per_device_train_batch_size 8 --per_device_eval_batch_size 8 --max_seq_len 512 --learning_rate 3e-4 --num_train_epochs 1 --gradient_accumulation_steps 8 --num_warmup_steps 100 --output_dir /root/autodl-tmp/rlhf/actor --lora_dim 8 --lora_module_name q_proj,k_proj --only_optimize_lora --deepspeed --zero_stage 2
-      - when --sft_only_data_path MultiTurnAlpaca is added, unzip data/data.zip
+      - when --sft_only_data_path MultiTurnAlpaca is added, unzip data/data.zip. MultiTurnAlpaca is a multi-turn version of the alpaca dataset [multi-turn-alpaca](https://github.com/l294265421/multi-turn-alpaca).
     - step2: --num_gpus 2 /tmp/pycharm_project_227/alpaca_rlhf/deepspeed_chat/training/step2_reward_model_finetuning/main.py --data_output_path /root/autodl-tmp/rlhf/tmp/ --model_name_or_path decapoda-research/llama-7b-hf --num_padding_at_beginning 0 --per_device_train_batch_size 4 --per_device_eval_batch_size 64 --learning_rate 5e-4 --num_train_epochs 1 --gradient_accumulation_steps 1 --num_warmup_steps 0 --zero_stage 2 --deepspeed --output_dir /root/autodl-tmp/rlhf/critic --lora_dim 8 --lora_module_name q_proj,k_proj --only_optimize_lora
       - the training process of step 2
         - ![](figures/step2/eval_acc.png)
