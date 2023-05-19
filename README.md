@@ -1,5 +1,5 @@
 # alpaca-rlhf
-Finetuning alpaca with RLHF (Reinforcement Learning with Human Feedback).
+Finetuning LLaMA with RLHF (Reinforcement Learning with Human Feedback).
 
 ## Online Demo
 - [SFT](https://d03f7b0466275d4f9e.gradio.live/)
