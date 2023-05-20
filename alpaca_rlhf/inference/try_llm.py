@@ -4,14 +4,18 @@ nohup python chatbot_gradio.py > chatbot_gradio.log 2>&1 &
 import os
 import sys
 import random
+import argparse
 
-import fire
 import gradio as gr
 import torch
 import transformers
-from peft import PeftModel
-from transformers import GenerationConfig
-from transformers import AutoConfig, OPTForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM
+from transformers import AutoTokenizer
+from transformers import AutoConfig
+from transformers import LlamaForCausalLM
+from transformers import LlamaTokenizer
+from transformers import GPT2LMHeadModel
+from transformers import GPT2Tokenizer
 from transformers import GenerationConfig
 import mdtex2html
 
@@ -21,23 +25,31 @@ if torch.cuda.is_available():
 else:
     device = "cpu"
 
-path = "/root/autodl-tmp/rlhf/actor"
-# path = 'facebook/opt-1.3b'
-# path = 'facebook/opt-350m'
-tokenizer = AutoTokenizer.from_pretrained(path, fast_tokenizer=True)
-tokenizer.pad_token_id = (
-        0  # unk. we want this to be different from the eos token
-    )
-tokenizer.padding_side = "left"
+parser = argparse.ArgumentParser()
+parser.add_argument('--path', type=str, default='facebook/opt-350m',
+                    choices=['decapoda-research/llama-7b-hf',
+                             'facebook/opt-350m',
+                             'gpt2'])
+args = parser.parse_args()
 
-model_config = AutoConfig.from_pretrained(path)
-model = OPTForCausalLM.from_pretrained(path,
-                                       from_tf=bool(".ckpt" in path),
-                                       config=model_config, device_map='auto')
+path = args.path
+model_name = path
+
+if model_name == 'gpt2':
+    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+    model = GPT2LMHeadModel.from_pretrained(model_name, pad_token_id=tokenizer.eos_token_id, device_map='auto')
+else:
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model_config = AutoConfig.from_pretrained(model_name)
+
+    model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                from_tf=bool(".ckpt" in model_name),
+                config=model_config
+            )
+
 model.eval()
-model.config.end_token_id = tokenizer.eos_token_id
-model.config.pad_token_id = model.config.eos_token_id
-model.resize_token_embeddings(len(tokenizer))
 
 
 """Override Chatbot.postprocess"""
@@ -91,7 +103,8 @@ def parse_text(text):
 
 
 def predict(input, chatbot, max_new_tokens, num_beams, do_sample, temperature, top_p, history):
-    current_utterance = 'Human: {instruction} Assistant: '.format(instruction=input)
+    # current_utterance = 'Human: {instruction} Assistant: '.format(instruction=input)
+    current_utterance = '{instruction} '.format(instruction=input)
     if history:
         instruction = history + ' ' + current_utterance
     else:
@@ -116,6 +129,7 @@ def predict(input, chatbot, max_new_tokens, num_beams, do_sample, temperature, t
         )
     s = generation_output.sequences[0]
     output = tokenizer.decode(s)
+    print('output: %s' % output)
     response = output[len(prompt):]
 
     chatbot.append((parse_text(input), parse_text(response)))
@@ -132,7 +146,7 @@ def reset_state():
 
 
 with gr.Blocks() as demo:
-    gr.HTML("""<h1 align="center">Alpaca-RLHF (主要支持英文)</h1>""")
+    gr.HTML(f"""<h1 align="center">Alpaca-{model_name} (主要支持英文)</h1>""")
     gr.HTML("""<h1 align="center"><a href="https://github.com/l294265421/alpaca-rlhf">GitHub</a></h1>""")
 
     chatbot = gr.Chatbot()
