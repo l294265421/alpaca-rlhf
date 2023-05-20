@@ -52,6 +52,9 @@ Finetuning LLaMA with RLHF (Reinforcement Learning with Human Feedback).
 - alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/ppo_trainer.py#DeepSpeedPPOTrainer#generate_experience
   - Normalize reward
     - ![](./figures/modifications/step3/normalize_reward.png)
+- alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/ppo_trainer.py#DeepSpeedPPOTrainer#_generate_sequence
+  - Mask the tokens after the eos
+    - ![](./figures/modifications/step3/mask_tokens_after_eos.png)
 
 ## Stey by Step
 - Running all three steps on 2 x A100 80G
