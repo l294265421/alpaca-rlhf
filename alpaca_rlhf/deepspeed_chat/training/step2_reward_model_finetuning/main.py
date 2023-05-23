@@ -377,9 +377,9 @@ def main():
         print_rank_0(
             f"Beginning of Epoch {epoch+1}/{args.num_train_epochs}, Total Micro Batches {len(train_dataloader)}",
             args.global_rank)
-        rm_model.train()
         mean_loss = 0
         for step, batch in enumerate(train_dataloader):
+            rm_model.train()
             batch = to_device(batch, device)
             outputs = rm_model(**batch, use_cache=False)
             loss = outputs["loss"]
@@ -409,7 +409,7 @@ def main():
                     'Train/reward_diff': reward - r_reward
                 })
 
-            if args.global_rank == 0 and (step + 1) % 100 == 0:
+            if (step + 1) % 100 == 0:
                 reward_score, rejected_scores, acc, score_std = evaluation_reward(rm_model, eval_dataloader)
                 wandb.log({
                     'Eval/epoch': -1,
