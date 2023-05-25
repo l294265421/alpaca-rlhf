@@ -22,19 +22,20 @@ else:
     device = "cpu"
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', type=str, default='/root/autodl-tmp/rlhf/final/actor',
+parser.add_argument('--path', type=str, default='/root/autodl-tmp/rlhf/actor',
                     choices=['/root/autodl-tmp/rlhf/final/actor',
-                             '/root/autodl-tmp/rlhf/actor'])
+                             '/root/autodl-tmp/rlhf/actor',
+                             'decapoda-research/llama-7b-hf'])
 args = parser.parse_args()
 
 path = args.path
 # tokenizer = LlamaTokenizer.from_pretrained('decapoda-research/llama-7b-hf')
 tokenizer = LlamaTokenizer.from_pretrained(path)
 
-if path == '/root/autodl-tmp/rlhf/actor':
-    model_name = 'SFT'
-else:
+if path == '/root/autodl-tmp/rlhf/final/actor':
     model_name = 'RLHF'
+else:
+    model_name = 'SFT'
 
 model = LlamaForCausalLM.from_pretrained(
     path,
