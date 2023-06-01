@@ -34,6 +34,8 @@ tokenizer = LlamaTokenizer.from_pretrained(path)
 
 if path == '/root/autodl-tmp/rlhf/final/actor':
     model_name = 'RLHF'
+elif path == 'decapoda-research/llama-7b-hf':
+    model_name = 'llama-7b'
 else:
     model_name = 'SFT'
 
