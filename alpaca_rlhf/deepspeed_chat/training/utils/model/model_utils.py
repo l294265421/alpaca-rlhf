@@ -38,7 +38,7 @@ def create_hf_model(model_class,
             model_name_or_path,
             from_tf=bool(".ckpt" in model_name_or_path),
             config=model_config,
-            torch_dtype=torch.float16
+            # torch_dtype=torch.float16
         )
 
     # model.config.end_token_id = tokenizer.eos_token_id
