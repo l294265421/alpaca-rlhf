@@ -45,8 +45,6 @@ Finetuning LLaMA with RLHF (Reinforcement Learning with Human Feedback).
   - Fix max length bug
     - ![](./figures/modifications/step3/max_len_bug.png)
 - alpaca_rlhf/deepspeed_chat/training/utils/data/data_utils.py#DataCollatorRLHF#__call__
-  - Fix pad_token_id bug
-    - ![](./figures/modifications/step3/pad_token_id_bug.png)
   - Fix padding side bug
     - ![](./figures/modifications/step3/padding_bug.png)
 - alpaca_rlhf/deepspeed_chat/training/step3_rlhf_finetuning/ppo_trainer.py#DeepSpeedPPOTrainer#generate_experience
