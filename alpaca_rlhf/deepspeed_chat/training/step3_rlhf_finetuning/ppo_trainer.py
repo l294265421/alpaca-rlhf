@@ -112,8 +112,8 @@ class DeepSpeedPPOTrainer():
                 seq, attention_mask,
                 prompt_length=self.prompt_length)['chosen_end_scores'].detach(
                 )
-            values = self.critic_model.forward_value(
-                seq, attention_mask, return_value_only=True).detach()[:, :-1]
+            values_temp = self.critic_model.forward_value(seq, attention_mask, return_value_only=True)
+            values = (values_temp * attention_mask).detach()[:, :-1]
 
         logits = output.logits
         logits_ref = output_ref.logits
