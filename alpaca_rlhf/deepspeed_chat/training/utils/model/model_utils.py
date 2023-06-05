@@ -11,7 +11,7 @@ from transformers import (
 )
 
 from transformers.deepspeed import HfDeepSpeedConfig
-
+from deepspeed.runtime.zero import stage3
 from .reward_model import RewardModel
 
 
@@ -51,6 +51,10 @@ def create_hf_model(model_class,
     model.resize_token_embeddings(int(
         8 *
         math.ceil(len(tokenizer) / 8.0)))  # make the vocab size multiple of 8
+
+    stage3.estimate_zero3_model_states_mem_needs_all_live(model, num_gpus_per_node=4,
+                                                          num_nodes=1,
+                                                          additional_buffer_factor=1.5)
 
     return model
 
